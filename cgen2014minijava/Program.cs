@@ -10,6 +10,10 @@ namespace cgen2014minijava
     {
         static void Main(string[] args)
         {
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String p = "class main { public static void main() { assert(((1+2*3))); } }";
+            SyntaxTree t = g.parse(p);
+            System.Console.ReadLine();
         }
     }
 }

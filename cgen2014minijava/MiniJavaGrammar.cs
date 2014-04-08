@@ -137,18 +137,25 @@ namespace cgen2014minijava
             parser.addProduction(t["statements"], new List<Token> { });
 
             parser.addProduction(t["if statement"], new List<Token> { t["if"] });
-            parser.addProduction(t["expr"], new List<Token> { t["int"] }); //variable declaration is parsed as an expression
-            parser.addProduction(t["expr"], new List<Token> { t["boolean"] });
-            parser.addProduction(t["expr"], new List<Token> { id });
-            parser.addProduction(t["expr"], new List<Token> { intV });
-            parser.addProduction(t["expr"], new List<Token> { boolV });
-            parser.addProduction(t["expr"], new List<Token> { t["("], t["expr"], t[")"] });
-            parser.addProduction(t["expr"], new List<Token> { t["new"] });
-            parser.addProduction(t["expr"], new List<Token> { not });
-            parser.addProduction(t["expr"], new List<Token> { o["-"] });
-            parser.addProduction(t["expr"], new List<Token> { t["this"] });
-            parser.addProduction(t["expr"], new List<Token> { t["true"] });
-            parser.addProduction(t["expr"], new List<Token> { t["false"] });
+            parser.addExpressionTerminal(t["int"]); //variable declaration is parsed as an expression
+            parser.addExpressionTerminal(t["boolean"]);
+            parser.addExpressionTerminal(id);
+            parser.addExpressionTerminal(intV);
+            parser.addExpressionTerminal(boolV);
+            parser.addExpressionTerminal(t["("]);
+            parser.addExpressionTerminal(t[")"]);
+            parser.addExpressionTerminal(t["["]);
+            parser.addExpressionTerminal(t["]"]);
+            parser.addExpressionTerminal(t["."]);
+            parser.addExpressionTerminal(t["new"]);
+            parser.addExpressionTerminal(t["length"]);
+            parser.addExpressionTerminal(t["this"]);
+            parser.addExpressionTerminal(t["true"]);
+            parser.addExpressionTerminal(t["false"]);
+            foreach (Token op in o.Values)
+            {
+                parser.addExpressionTerminal(op);
+            }
 
             parser.setStartSymbol(t["prog"]);
             parser.prepareForParsing();

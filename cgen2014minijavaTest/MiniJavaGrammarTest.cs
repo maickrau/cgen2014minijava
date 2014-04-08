@@ -37,5 +37,38 @@ namespace cgen2014minijavaTest
             Assert.AreEqual(5, t.root.children[0].children[7].children[0].children[0].children.Count);
             Assert.AreEqual(6, t.root.children[0].children[7].children[0].children[0].children[4].children[0].children.Count);
         }
+        [TestMethod]
+        public void parsesSimpleExpression()
+        {
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String p = "class main { public static void main() { assert(1+2*3); } }";
+            SyntaxTree t = g.parse(p);
+            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].token);
+            Assert.AreEqual(2, t.root.children[0].children[7].children[0].children[2].children.Count);
+            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].children[1].token);
+            Assert.AreEqual(3, ((IntLiteral)t.root.children[0].children[7].children[0].children[2].children[1].children[1].token).value);
+        }
+        [TestMethod]
+        public void parsesExpressionWithExtraParenthesis()
+        {
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String p = "class main { public static void main() { assert(((1+2*3))); } }";
+            SyntaxTree t = g.parse(p);
+            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].token);
+            Assert.AreEqual(2, t.root.children[0].children[7].children[0].children[2].children.Count);
+            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].children[1].token);
+            Assert.AreEqual(3, ((IntLiteral)t.root.children[0].children[7].children[0].children[2].children[1].children[1].token).value);
+        }
+        [TestMethod]
+        public void parsesExpressionWithActualParenthesis()
+        {
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String p = "class main { public static void main() { assert((1+2)*3); } }";
+            SyntaxTree t = g.parse(p);
+            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].token);
+            Assert.AreEqual(2, t.root.children[0].children[7].children[0].children[2].children.Count);
+            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].children[0].token);
+            Assert.AreEqual(2, ((IntLiteral)t.root.children[0].children[7].children[0].children[2].children[0].children[1].token).value);
+        }
     }
 }

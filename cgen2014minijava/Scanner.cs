@@ -168,6 +168,10 @@ namespace cgen2014minijava
             }
             //don't catch FormatException, if it happened then something has gone very wrong
         }
+        public override String ToString()
+        {
+            return "Intliteral:" + value;
+        }
         public int value;
     }
     public class StringLiteral : Token

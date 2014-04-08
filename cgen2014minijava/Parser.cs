@@ -81,6 +81,7 @@ namespace cgen2014minijava
         Dictionary<Tuple<Token, Token>, List<Token>> predict;
         HashSet<Token> languageTerminals;
         HashSet<Token> languageSymbols;
+        HashSet<Token> expressionTokens; //all terminals an expression may contain
         Token startSymbol;
         Token eof;
         List<String> errors;
@@ -123,12 +124,20 @@ namespace cgen2014minijava
         }
         public Parser()
         {
+            expressionTokens = new HashSet<Token>();
             productionRules = new Dictionary<Token, List<List<Token>>>();
             languageSymbols = new HashSet<Token>();
             languageTerminals = new HashSet<Token>();
             predict = new Dictionary<Tuple<Token, Token>, List<Token>>();
             eof = new NonTerminal("eof");
             addSymbol(eof);
+            addSymbol(new NonTerminal("expr"));
+        }
+        public void addExpressionTerminal(Token s)
+        {
+            addSymbol(s);
+            expressionTokens.Add(s);
+            productionRules[new NonTerminal("expr")].Add(new List<Token>{s});
         }
         private void addSymbol(Token s)
         {
@@ -365,6 +374,10 @@ namespace cgen2014minijava
             calculateTerminals();
             calculatePredict();
         }
+        private void addError(Token location, String message)
+        {
+            errors.Add("" + location.line + ":" + location.position + " Syntax error: " + message);
+        }
         private void addError(Token location, Token received, List<Token> expected)
         {
             if (received == eof)
@@ -451,7 +464,211 @@ namespace cgen2014minijava
         }
         private void parseExpr(SyntaxNode currentNode, List<Token> tokens, ref int loc)
         {
-            loc++;
+            List<Token> thisExpression = new List<Token>();
+            int start = loc;
+            Token t = getPredictToken(tokens, loc);
+            int parenthesisDepth = 0;
+            while (expressionTokens.Contains(t))
+            {
+                if (t.Equals(new Keyword("(")))
+                {
+                    parenthesisDepth++;
+                }
+                if (t.Equals(new Keyword(")")))
+                {
+                    if (parenthesisDepth == 0)
+                    {
+                        break;
+                    }
+                    parenthesisDepth--;
+                }
+                thisExpression.Add(t);
+                loc++;
+                t = getPredictToken(tokens, loc);
+            }
+            List<Token> realTokens = tokens.GetRange(start, loc - start);
+            if (thisExpression.Count == 2)
+            {
+                if (realTokens[1] is Identifier)
+                {
+                    if (realTokens[0] is Identifier || realTokens[0].Equals(new Keyword("int")) || realTokens[0].Equals(new Keyword("bool")))
+                    {
+                        //variable declaration
+                        currentNode.token = realTokens[0];
+                        SyntaxNode id = new SyntaxNode(realTokens[1]);
+                        id.parent = currentNode;
+                        currentNode.children.Add(id);
+                        return;
+                    }
+                }
+            }
+            parseExprInternal(currentNode, thisExpression, realTokens);
+        }
+        private void parseExprInternal(SyntaxNode currentNode, List<Token> expression, List<Token> realTokens)
+        {
+            /*
+            StringBuilder sb = new StringBuilder();
+            foreach (Token e in realTokens)
+            {
+                sb.Append(e).Append(", ");
+            }
+            System.Console.WriteLine("Parseexpr " + sb.ToString());
+             */
+            if (expression.Count == 0)
+            {
+                throw new Exception("Something went wrong! Expression has 0 tokens");
+            }
+            if (expression.Count == 1)
+            {
+                if (!(expression[0] is Identifier) && !(expression[0] is IntLiteral) && !(expression[0] is BoolLiteral))
+                {
+                    addError(expression[0], "Expected identifier or value");
+                }
+                currentNode.token = realTokens[0];
+                return;
+            }
+            if (expression[0] is Operator)
+            {
+                Operator op = (Operator)expression[0];
+                if (op.value != "+" && op.value != "-" && op.value != "!")
+                {
+                    addError(expression[0], "Expected unary operator");
+                    return;
+                }
+            }
+            if (expression[expression.Count-1] is Operator)
+            {
+                addError(expression[expression.Count-1], "Did not expect operator");
+                return;
+            }
+            int parenthesisDepth = 0;
+            int parenthesisStart = -1;
+            int firstMultiplicative = -1;
+            int firstAdditive = -1;
+            int firstComparative = -1;
+            int firstEquals = -1;
+            int firstLogical = -1;
+            if (expression[0].Equals(new Keyword("(")))
+            {
+                parenthesisStart = 0;
+                parenthesisDepth++;
+            }
+            for (int i = 1; i < expression.Count-1; i++)
+            {
+                if (expression[i].Equals(new Keyword("(")))
+                {
+                    if (parenthesisDepth == 0)
+                    {
+                        parenthesisStart = i;
+                    }
+                    parenthesisDepth++;
+                }
+                if (expression[i].Equals(new Keyword(")")))
+                {
+                    if (parenthesisDepth == 0)
+                    {
+                        addError(expression[i], "Extra closing parenthesis");
+                        return;
+                    }
+                    parenthesisDepth--;
+                }
+                if (parenthesisDepth == 0 && expression[i] is Operator)
+                {
+                    Operator op = (Operator)expression[i];
+                    if ((op.value == "*" || op.value == "/" || op.value == "%") && firstMultiplicative == -1)
+                    {
+                        firstMultiplicative = i;
+                    }
+                    if ((op.value == "+" || op.value == "-")  && firstAdditive == -1)
+                    {
+                        firstAdditive = i;
+                    }
+                    if ((op.value == "<" || op.value == ">") && firstComparative == -1)
+                    {
+                        firstComparative = i;
+                    }
+                    if ((op.value == "==") && firstEquals == -1)
+                    {
+                        firstEquals = i;
+                    }
+                    if ((op.value == "&&" || op.value == "||") && firstLogical == -1)
+                    {
+                        firstLogical = i;
+                        break;
+                    }
+                }
+            }
+            if (expression[expression.Count-1].Equals(new Keyword(")")))
+            {
+                if (parenthesisDepth == 0)
+                {
+                    addError(expression[expression.Count - 1], "Extra closing parenthesis");
+                    return;
+                }
+                parenthesisDepth--;
+            }
+            if (parenthesisDepth != 0)
+            {
+                addError(expression[parenthesisStart], "Unclosed parenthesis");
+                return;
+            }
+            SyntaxNode left = new SyntaxNode(expression[0]);
+            SyntaxNode right = new SyntaxNode(expression[0]);
+            int splitAt = -1;
+            if (firstLogical != -1)
+            {
+                splitAt = firstLogical;
+                currentNode.token = expression[firstLogical];
+            }
+            else if (firstEquals != -1)
+            {
+                splitAt = firstEquals;
+                currentNode.token = expression[firstEquals];
+            }
+            else if (firstComparative != -1)
+            {
+                splitAt = firstComparative;
+                currentNode.token = expression[firstComparative];
+            }
+            else if (firstAdditive != -1)
+            {
+                splitAt = firstAdditive;
+                currentNode.token = expression[firstAdditive];
+            }
+            else if (firstMultiplicative != -1)
+            {
+                splitAt = firstMultiplicative;
+                currentNode.token = expression[firstMultiplicative];
+            }
+            if (splitAt != -1)
+            {
+                if (splitAt == 0 || splitAt == expression.Count-1)
+                {
+                    addError(expression[splitAt], "Binary expression must have two operands");
+                    return;
+                }
+                parseExprInternal(left, expression.GetRange(0, splitAt), realTokens.GetRange(0, splitAt));
+                parseExprInternal(right, expression.GetRange(splitAt + 1, expression.Count - splitAt - 1), realTokens.GetRange(splitAt + 1, expression.Count - splitAt - 1));
+                left.parent = currentNode;
+                right.parent = currentNode;
+                currentNode.children.Add(left);
+                currentNode.children.Add(right);
+            }
+            else
+            {
+                if (expression[0].Equals(new Keyword("(")))
+                {
+                    //whole expression is inside parenthesis
+                    parseExprInternal(currentNode, expression.GetRange(1, expression.Count - 2), realTokens.GetRange(1, expression.Count - 2));
+                    return;
+                }
+                //unary ! - +
+                currentNode.token = expression[0];
+                SyntaxNode child = new SyntaxNode(expression[0]);
+                parseExprInternal(child, expression.GetRange(1, expression.Count - 1), realTokens.GetRange(1, expression.Count - 1));
+                currentNode.children.Add(child);
+                child.parent = currentNode;
+            }
         }
         private void parse(SyntaxNode currentNode, List<Token> tokens, ref int loc)
         {
