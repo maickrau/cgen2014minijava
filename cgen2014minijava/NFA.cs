@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections;
 
-namespace comp2014minipl
+namespace cgen2014minijava
 {
     public class NFA
     {

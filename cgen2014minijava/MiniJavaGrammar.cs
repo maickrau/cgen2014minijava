@@ -4,16 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace comp2014minipl
+namespace cgen2014minijava
 {
-    public class MiniPLGrammar
+    public class MiniJavaGrammar
     {
         private Decommenter decommenter;
         private Parser parser;
         private Scanner scanner;
         public Dictionary<String, Token> t;
         public Dictionary<String, Token> o;
-        public MiniPLGrammar()
+        public MiniJavaGrammar()
         {
             decommenter = new Decommenter();
             parser = new Parser();
@@ -28,42 +28,67 @@ namespace comp2014minipl
         }
         private void initializeGrammar()
         {
-            addKeywordOrNonTerminal("for");
-            addKeywordOrNonTerminal("in");
-            addKeywordOrNonTerminal("..", "\\.\\.");
-            addKeywordOrNonTerminal("do");
-            addKeywordOrNonTerminal("end");
-            addKeywordOrNonTerminal("var");
-            addKeywordOrNonTerminal(";");
-            addKeywordOrNonTerminal(":");
-            addKeywordOrNonTerminal(":=");
-            addKeywordOrNonTerminal("read");
-            addKeywordOrNonTerminal("print");
-            addKeywordOrNonTerminal("assert");
-            addKeywordOrNonTerminal("type");
-            addKeywordOrNonTerminal("int");
-            addKeywordOrNonTerminal("string");
-            addKeywordOrNonTerminal("bool");
-            addKeywordOrNonTerminal("(", "\\(");
-            addKeywordOrNonTerminal(")", "\\)");
-            addKeywordOrNonTerminal("prog");
-            addKeywordOrNonTerminal("stmts");
-            addKeywordOrNonTerminal("stmt");
-            addKeywordOrNonTerminal("expr");
-            addKeywordOrNonTerminal("expr2");
-            addKeywordOrNonTerminal("expr3");
-            addKeywordOrNonTerminal("opnd");
-            addKeywordOrNonTerminal("op");
-            addKeywordOrNonTerminal("unary_op");
-            addKeywordOrNonTerminal("maybeAssign");
+            addKeyword("class");
+            addKeyword("public static void main"); //yuck
+            addKeyword("{");
+            addKeyword("}");
+            addKeyword("(", "\\(");
+            addKeyword(")", "\\)");
+            addKeyword("[", "\\[");
+            addKeyword("]", "\\]");
+            addKeyword("extends");
+            addKeyword("public");
+            addKeyword(";");
+            addKeyword("int");
+            addKeyword("boolean");
+            addKeyword("void");
+            addKeyword("assert");
+            addKeyword("if");
+            addKeyword("else");
+            addKeyword("while");
+            addKeyword("System.out.println"); //eww
+            addKeyword("return");
+            addKeyword("=");
+            addKeyword(".", "\\.");
+            addKeyword(",");
+            addKeyword("length");
+            addKeyword("new");
+            addKeyword("this");
+            addKeyword("true");
+            addKeyword("false");
 
+            addNonTerminal("prog");
+            addNonTerminal("main class");
+            addNonTerminal("class decls");
+            addNonTerminal("class decl");
+            addNonTerminal("decl");
+            addNonTerminal("decls");
+            addNonTerminal("variable decl");
+            addNonTerminal("method decl");
+            addNonTerminal("formals");
+            addNonTerminal("formal");
+            addNonTerminal("more formals");
+            addNonTerminal("type");
+            addNonTerminal("base type");
+            addNonTerminal("maybe array");
+            addNonTerminal("maybe extends");
+            addNonTerminal("statement");
+            addNonTerminal("statements");
+            addNonTerminal("op");
+            addNonTerminal("statement expr");
+            addNonTerminal("if statement"); //special!
+            addNonTerminal("expr"); //special!
+
+            addOperator("&&");
+            addOperator("||");
+            addOperator("<");
+            addOperator(">");
+            addOperator("==");
             addOperator("+");
             addOperator("-");
             addOperator("*");
             addOperator("/");
-            addOperator("<");
-            addOperator("=");
-            addOperator("&");
+            addOperator("%");
             //unary must be handled separately from binary because otherwise "abc"!"abc" is parseable
             Token not = new Operator("!");
             o.Add("!", not);
@@ -71,35 +96,45 @@ namespace comp2014minipl
 
             Token id = new Identifier("");
             Token intV = new IntLiteral("0");
-            Token strV = new StringLiteral("");
             Token boolV = new BoolLiteral("");
 
-            parser.addProduction(t["prog"], new List<Token> { t["stmt"], t[";"], t["stmts"] });
-            parser.addProduction(t["stmts"], new List<Token> { t["stmt"], t[";"], t["stmts"] });
-            parser.addProduction(t["stmts"], new List<Token> { });
-            parser.addProduction(t["stmt"], new List<Token> { t["var"], id, t[":"], t["type"], t["maybeAssign"] });
-            parser.addProduction(t["stmt"], new List<Token> { t["for"], id, t["in"], t["expr"], t[".."], t["expr"], t["do"], t["stmt"], t[";"], t["stmts"], t["end"], t["for"] });
-            parser.addProduction(t["stmt"], new List<Token> { id, t[":="], t["expr"] });
-            parser.addProduction(t["stmt"], new List<Token> { t["read"], id });
-            parser.addProduction(t["stmt"], new List<Token> { t["print"], t["expr"] });
-            parser.addProduction(t["stmt"], new List<Token> { t["assert"], t["("], t["expr"], t[")"] });
-            parser.addProduction(t["expr"], new List<Token> { t["expr2"] });
-            parser.addProduction(t["expr"], new List<Token> { t["unary_op"], t["opnd"] });
-            parser.addProduction(t["expr2"], new List<Token> { t["opnd"], t["expr3"] });
-            parser.addProduction(t["expr3"], new List<Token> { t["op"], t["opnd"] });
-            parser.addProduction(t["expr3"], new List<Token> { });
-            parser.addProduction(t["opnd"], new List<Token> { intV });
-            parser.addProduction(t["opnd"], new List<Token> { strV });
-            parser.addProduction(t["opnd"], new List<Token> { boolV });
-            parser.addProduction(t["opnd"], new List<Token> { id });
-            parser.addProduction(t["opnd"], new List<Token> { t["("], t["expr"], t[")"] });
-            parser.addProduction(t["type"], new List<Token> { t["int"] });
-            parser.addProduction(t["type"], new List<Token> { t["string"] });
-            parser.addProduction(t["type"], new List<Token> { t["bool"] });
-            parser.addProduction(t["maybeAssign"], new List<Token> { t[":="], t["expr"] });
-            parser.addProduction(t["maybeAssign"], new List<Token> { });
-            parser.addProduction(t["unary_op"], new List<Token> { not });
-            parser.addProduction(t["unary_op"], new List<Token> { o["-"] });
+            parser.addProduction(t["prog"], new List<Token> { t["main class"], t["class decls"] });
+            parser.addProduction(t["main class"], new List<Token> { t["class"], id, t["{"], t["public static void main"], t["("], t[")"], t["{"], t["statements"], t["}"], t["}"] });
+            parser.addProduction(t["class decls"], new List<Token> { t["class decl"], t["class decls"] });
+            parser.addProduction(t["class decls"], new List<Token> { });
+            parser.addProduction(t["class decl"], new List<Token> { t["class"], id, t["maybe extends"], t["{"], t["decls"], t["}"] });
+            parser.addProduction(t["decl"], new List<Token> { t["variable decl"] });
+            parser.addProduction(t["decl"], new List<Token> { t["method decl"] });
+            parser.addProduction(t["decls"], new List<Token> { t["decl"], t["decls"] });
+            parser.addProduction(t["decls"], new List<Token> { });
+            parser.addProduction(t["method decl"], new List<Token> { t["public"], t["type"], id, t["("], t["formals"], t[")"], t["{"], t["statements"], t["}"] });
+            parser.addProduction(t["variable decl"], new List<Token> { t["type"], id, t[";"] });
+            parser.addProduction(t["formals"], new List<Token> { });
+            parser.addProduction(t["formals"], new List<Token> { t["formal"], t["more formals"] });
+            parser.addProduction(t["formal"], new List<Token> { t["type"], id });
+            parser.addProduction(t["more formals"], new List<Token> { t[","], t["type"], id, t["more formals"] });
+            parser.addProduction(t["more formals"], new List<Token> { });
+            parser.addProduction(t["type"], new List<Token> { t["base type"], t["maybe array"] });
+            parser.addProduction(t["base type"], new List<Token> { t["int"] });
+            parser.addProduction(t["base type"], new List<Token> { t["boolean"] });
+            parser.addProduction(t["base type"], new List<Token> { t["void"] });
+            parser.addProduction(t["base type"], new List<Token> { id });
+            parser.addProduction(t["maybe array"], new List<Token> { t["["], t["]"] });
+            parser.addProduction(t["maybe array"], new List<Token> { });
+            parser.addProduction(t["maybe extends"], new List<Token> { t["extends"], id });
+            parser.addProduction(t["maybe extends"], new List<Token> { });
+            parser.addProduction(t["statement"], new List<Token> { t["assert"], t["("], t["expr"], t[")"], t[";"] });
+            parser.addProduction(t["statement"], new List<Token> { t["variable decl"] });
+            parser.addProduction(t["statement"], new List<Token> { t["{"], t["statements"], t["}"] });
+            parser.addProduction(t["statement"], new List<Token> { t["if statement"] });
+            parser.addProduction(t["statement"], new List<Token> { t["while"], t["("], t["expr"], t[")"], t["statement"] });
+            parser.addProduction(t["statement"], new List<Token> { t["System.out.println"], t["("], t["expr"], t[")"], t[";"] });
+            parser.addProduction(t["statement"], new List<Token> { t["return"], t["expr"], t[";"] });
+            parser.addProduction(t["statement"], new List<Token> { t["expr"], t["statement expr"] });
+            parser.addProduction(t["statement expr"], new List<Token> { t[";"] }); //method call
+            parser.addProduction(t["statement expr"], new List<Token> { t["="], t["expr"] });
+            parser.addProduction(t["statements"], new List<Token> { t["statement"], t["statements"] });
+            parser.addProduction(t["statements"], new List<Token> { });
 
             parser.setStartSymbol(t["prog"]);
             parser.prepareForParsing();
@@ -110,7 +145,7 @@ namespace comp2014minipl
             scanner.addOperator(op);
             parser.addProduction(t["op"], new List<Token>{ o[op] });
         }
-        private void addKeywordOrNonTerminal(String keyword, String regex = null)
+        private void addKeyword(String keyword, String regex = null)
         {
             if (regex == null)
             {
@@ -118,6 +153,10 @@ namespace comp2014minipl
             }
             t.Add(keyword, new Keyword(keyword));
             scanner.addKeyword(regex);
+        }
+        private void addNonTerminal(String keyword)
+        {
+            t.Add(keyword, new NonTerminal(keyword));
         }
     }
 }

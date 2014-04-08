@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace comp2014minipl
+namespace cgen2014minijava
 {
     public class RegexException : Exception
     {

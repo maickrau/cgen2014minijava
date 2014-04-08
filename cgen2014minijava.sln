@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cgen2014minijava", "cgen2014minijava\cgen2014minijava.csproj", "{A1FD6780-CBBF-493F-A493-719E2B746448}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cgen2014minijavaTest", "cgen2014minijavaTest\cgen2014minijavaTest.csproj", "{BCA338B1-486A-4F1A-B119-EC5872A91F0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{A1FD6780-CBBF-493F-A493-719E2B746448}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1FD6780-CBBF-493F-A493-719E2B746448}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1FD6780-CBBF-493F-A493-719E2B746448}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCA338B1-486A-4F1A-B119-EC5872A91F0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCA338B1-486A-4F1A-B119-EC5872A91F0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCA338B1-486A-4F1A-B119-EC5872A91F0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCA338B1-486A-4F1A-B119-EC5872A91F0C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
