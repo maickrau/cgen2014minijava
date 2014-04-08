@@ -11,7 +11,7 @@ namespace cgen2014minijava
         static void Main(string[] args)
         {
             MiniJavaGrammar g = new MiniJavaGrammar();
-            String p = "class main { public static void main() { assert(((1+2*3))); } }";
+            String p = "class main { public static void main() { assert(a.b(ab[d.c(1, 2)], d())+5*a.f()()); } }";
             SyntaxTree t = g.parse(p);
             System.Console.ReadLine();
         }

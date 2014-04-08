@@ -152,6 +152,7 @@ namespace cgen2014minijava
             parser.addExpressionTerminal(t["this"]);
             parser.addExpressionTerminal(t["true"]);
             parser.addExpressionTerminal(t["false"]);
+            parser.addExpressionTerminal(t[","]);
             foreach (Token op in o.Values)
             {
                 parser.addExpressionTerminal(op);

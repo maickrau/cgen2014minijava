@@ -506,14 +506,14 @@ namespace cgen2014minijava
         }
         private void parseExprInternal(SyntaxNode currentNode, List<Token> expression, List<Token> realTokens)
         {
-            /*
+            
             StringBuilder sb = new StringBuilder();
             foreach (Token e in realTokens)
             {
                 sb.Append(e).Append(", ");
             }
             System.Console.WriteLine("Parseexpr " + sb.ToString());
-             */
+            
             if (expression.Count == 0)
             {
                 throw new Exception("Something went wrong! Expression has 0 tokens");
@@ -543,11 +543,14 @@ namespace cgen2014minijava
             }
             int parenthesisDepth = 0;
             int parenthesisStart = -1;
-            int firstMultiplicative = -1;
-            int firstAdditive = -1;
-            int firstComparative = -1;
-            int firstEquals = -1;
-            int firstLogical = -1;
+            int arrayDepth = 0;
+            int arrayStart = -1;
+            int lastSuperSpecial = -1; // [], () and ., eg: things[5], doThings(), thing.value
+            int lastMultiplicative = -1;
+            int lastAdditive = -1;
+            int lastComparative = -1;
+            int lastEquals = -1;
+            int lastLogical = -1;
             if (expression[0].Equals(new Keyword("(")))
             {
                 parenthesisStart = 0;
@@ -555,6 +558,37 @@ namespace cgen2014minijava
             }
             for (int i = 1; i < expression.Count-1; i++)
             {
+                if (parenthesisDepth == 0 && arrayDepth == 0)
+                {
+                    if (expression[i].Equals(new Keyword(".")) || expression[i].Equals(new Keyword("[")) || expression[i].Equals(new Keyword("(")))
+                    {
+                        lastSuperSpecial = i;
+                    }
+                    if (expression[i] is Operator)
+                    {
+                        Operator op = (Operator)expression[i];
+                        if (op.value == "*" || op.value == "/" || op.value == "%")
+                        {
+                            lastMultiplicative = i;
+                        }
+                        if (op.value == "+" || op.value == "-")
+                        {
+                            lastAdditive = i;
+                        }
+                        if (op.value == "<" || op.value == ">")
+                        {
+                            lastComparative = i;
+                        }
+                        if (op.value == "==")
+                        {
+                            lastEquals = i;
+                        }
+                        if (op.value == "&&" || op.value == "||")
+                        {
+                            lastLogical = i;
+                        }
+                    }
+                }
                 if (expression[i].Equals(new Keyword("(")))
                 {
                     if (parenthesisDepth == 0)
@@ -572,33 +606,32 @@ namespace cgen2014minijava
                     }
                     parenthesisDepth--;
                 }
-                if (parenthesisDepth == 0 && expression[i] is Operator)
+                if (expression[i].Equals(new Keyword("[")))
                 {
-                    Operator op = (Operator)expression[i];
-                    if ((op.value == "*" || op.value == "/" || op.value == "%") && firstMultiplicative == -1)
+                    if (arrayDepth == 0)
                     {
-                        firstMultiplicative = i;
+                        arrayStart = i;
                     }
-                    if ((op.value == "+" || op.value == "-")  && firstAdditive == -1)
+                    arrayDepth++;
+                }
+                if (expression[i].Equals(new Keyword("]")))
+                {
+                    if (arrayDepth == 0)
                     {
-                        firstAdditive = i;
+                        addError(expression[arrayStart], "Extra array access closing brackets");
                     }
-                    if ((op.value == "<" || op.value == ">") && firstComparative == -1)
-                    {
-                        firstComparative = i;
-                    }
-                    if ((op.value == "==") && firstEquals == -1)
-                    {
-                        firstEquals = i;
-                    }
-                    if ((op.value == "&&" || op.value == "||") && firstLogical == -1)
-                    {
-                        firstLogical = i;
-                        break;
-                    }
+                    arrayDepth--;
                 }
             }
-            if (expression[expression.Count-1].Equals(new Keyword(")")))
+            if (expression[expression.Count - 1].Equals(new Keyword("]")))
+            {
+                if (arrayDepth == 0)
+                {
+                    addError(expression[arrayStart], "Extra array access closing brackets");
+                }
+                arrayDepth--;
+            }
+            if (expression[expression.Count - 1].Equals(new Keyword(")")))
             {
                 if (parenthesisDepth == 0)
                 {
@@ -606,6 +639,16 @@ namespace cgen2014minijava
                     return;
                 }
                 parenthesisDepth--;
+                if (parenthesisStart == 0)
+                {
+                    //whole expression is inside parenthesis
+                    parseExprInternal(currentNode, expression.GetRange(1, expression.Count - 2), realTokens.GetRange(1, expression.Count - 2));
+                    return;
+                }
+            }
+            if (arrayDepth != 0)
+            {
+                addError(expression[arrayStart], "Unclosed array access brackets");
             }
             if (parenthesisDepth != 0)
             {
@@ -615,30 +658,72 @@ namespace cgen2014minijava
             SyntaxNode left = new SyntaxNode(expression[0]);
             SyntaxNode right = new SyntaxNode(expression[0]);
             int splitAt = -1;
-            if (firstLogical != -1)
+            if (lastLogical != -1)
             {
-                splitAt = firstLogical;
-                currentNode.token = expression[firstLogical];
+                splitAt = lastLogical;
+                currentNode.token = expression[lastLogical];
             }
-            else if (firstEquals != -1)
+            else if (lastEquals != -1)
             {
-                splitAt = firstEquals;
-                currentNode.token = expression[firstEquals];
+                splitAt = lastEquals;
+                currentNode.token = expression[lastEquals];
             }
-            else if (firstComparative != -1)
+            else if (lastComparative != -1)
             {
-                splitAt = firstComparative;
-                currentNode.token = expression[firstComparative];
+                splitAt = lastComparative;
+                currentNode.token = expression[lastComparative];
             }
-            else if (firstAdditive != -1)
+            else if (lastAdditive != -1)
             {
-                splitAt = firstAdditive;
-                currentNode.token = expression[firstAdditive];
+                splitAt = lastAdditive;
+                currentNode.token = expression[lastAdditive];
             }
-            else if (firstMultiplicative != -1)
+            else if (lastMultiplicative != -1)
             {
-                splitAt = firstMultiplicative;
-                currentNode.token = expression[firstMultiplicative];
+                splitAt = lastMultiplicative;
+                currentNode.token = expression[lastMultiplicative];
+            }
+            else if (lastSuperSpecial != -1 && expression[lastSuperSpecial].Equals(new Keyword(".")))
+            {
+                splitAt = lastSuperSpecial;
+                currentNode.token = expression[lastSuperSpecial];
+            }
+            else if (lastSuperSpecial != -1)
+            {
+                if (expression[lastSuperSpecial].Equals(new Keyword("[")))
+                {
+                    if (!expression[expression.Count-1].Equals(new Keyword("]")))
+                    {
+                        addError(expression[lastSuperSpecial], "Unclosed array access");
+                        return;
+                    }
+                    parseExprInternal(right, expression.GetRange(lastSuperSpecial + 1, expression.Count - lastSuperSpecial - 2), realTokens.GetRange(lastSuperSpecial + 1, expression.Count - lastSuperSpecial - 2));
+                    right.parent = currentNode;
+                    currentNode.children.Add(right);
+                }
+                else if (expression[lastSuperSpecial].Equals(new Keyword("(")))
+                {
+                    if (!expression[expression.Count - 1].Equals(new Keyword(")")))
+                    {
+                        addError(expression[lastSuperSpecial], "Unclosed function call");
+                        return;
+                    }
+                    List<SyntaxNode> arguments = parseArguments(expression.GetRange(lastSuperSpecial + 1, expression.Count - lastSuperSpecial - 2), realTokens.GetRange(lastSuperSpecial + 1, expression.Count - lastSuperSpecial - 2));
+                    foreach (SyntaxNode n in arguments)
+                    {
+                        n.parent = currentNode;
+                        currentNode.children.Add(n);
+                    }
+                }
+                else
+                {
+                    throw new Exception("Unknown super special operator type");
+                }
+                parseExprInternal(left, expression.GetRange(0, lastSuperSpecial), realTokens.GetRange(0, lastSuperSpecial));
+                left.parent = currentNode;
+                currentNode.children.Insert(0, left);
+                currentNode.token = expression[lastSuperSpecial];
+                return;
             }
             if (splitAt != -1)
             {
@@ -656,12 +741,6 @@ namespace cgen2014minijava
             }
             else
             {
-                if (expression[0].Equals(new Keyword("(")))
-                {
-                    //whole expression is inside parenthesis
-                    parseExprInternal(currentNode, expression.GetRange(1, expression.Count - 2), realTokens.GetRange(1, expression.Count - 2));
-                    return;
-                }
                 //unary ! - +
                 currentNode.token = expression[0];
                 SyntaxNode child = new SyntaxNode(expression[0]);
@@ -669,6 +748,62 @@ namespace cgen2014minijava
                 currentNode.children.Add(child);
                 child.parent = currentNode;
             }
+        }
+        private List<SyntaxNode> parseArguments(List<Token> expression, List<Token> realTokens)
+        {
+
+            StringBuilder sb = new StringBuilder();
+            foreach (Token e in realTokens)
+            {
+                sb.Append(e).Append(", ");
+            }
+            System.Console.WriteLine("Parseargs " + sb.ToString());
+
+            if (expression.Count == 0)
+            {
+                return new List<SyntaxNode>();
+            }
+            int start = 0;
+            List<SyntaxNode> ret = new List<SyntaxNode>();
+            int parenthesisDepth = 0;
+            int parenthesisStart = 0;
+            SyntaxNode parseNode;
+            for (int i = 0; i < expression.Count; i++)
+            {
+                if (expression[i].Equals(new Keyword("(")))
+                {
+                    if (parenthesisDepth == 0)
+                    {
+                        parenthesisStart = i;
+                    }
+                    parenthesisDepth++;
+                }
+                if (expression[i].Equals(new Keyword(")")))
+                {
+                    if (parenthesisDepth == 0)
+                    {
+                        addError(expression[i], "Extra closing parenthesis");
+                        break;
+                    }
+                    parenthesisDepth--;
+                }
+                if (parenthesisDepth == 0 && expression[i].Equals(new Keyword(",")))
+                {
+                    parseNode = new SyntaxNode(expression[0]);
+                    parseExprInternal(parseNode, expression.GetRange(start, i - start), realTokens.GetRange(start, i - start));
+                    ret.Add(parseNode);
+                    i++;
+                    start = i;
+                }
+            }
+            parseNode = new SyntaxNode(expression[0]);
+            parseExprInternal(parseNode, expression.GetRange(start, expression.Count - start), realTokens.GetRange(start, expression.Count - start));
+            ret.Add(parseNode);
+            if (parenthesisDepth != 0)
+            {
+                addError(expression[parenthesisStart], "Unclosed parenthesis");
+            }
+            return ret;
         }
         private void parse(SyntaxNode currentNode, List<Token> tokens, ref int loc)
         {
