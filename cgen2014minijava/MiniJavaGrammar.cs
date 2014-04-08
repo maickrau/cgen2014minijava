@@ -124,17 +124,31 @@ namespace cgen2014minijava
             parser.addProduction(t["maybe extends"], new List<Token> { t["extends"], id });
             parser.addProduction(t["maybe extends"], new List<Token> { });
             parser.addProduction(t["statement"], new List<Token> { t["assert"], t["("], t["expr"], t[")"], t[";"] });
-            parser.addProduction(t["statement"], new List<Token> { t["variable decl"] });
+//            parser.addProduction(t["statement"], new List<Token> { t["variable decl"] });
             parser.addProduction(t["statement"], new List<Token> { t["{"], t["statements"], t["}"] });
             parser.addProduction(t["statement"], new List<Token> { t["if statement"] });
             parser.addProduction(t["statement"], new List<Token> { t["while"], t["("], t["expr"], t[")"], t["statement"] });
             parser.addProduction(t["statement"], new List<Token> { t["System.out.println"], t["("], t["expr"], t[")"], t[";"] });
             parser.addProduction(t["statement"], new List<Token> { t["return"], t["expr"], t[";"] });
             parser.addProduction(t["statement"], new List<Token> { t["expr"], t["statement expr"] });
-            parser.addProduction(t["statement expr"], new List<Token> { t[";"] }); //method call
-            parser.addProduction(t["statement expr"], new List<Token> { t["="], t["expr"] });
+            parser.addProduction(t["statement expr"], new List<Token> { t[";"] }); //method call or variable declaration
+            parser.addProduction(t["statement expr"], new List<Token> { t["="], t["expr"] }); //variable declaration can be initialized
             parser.addProduction(t["statements"], new List<Token> { t["statement"], t["statements"] });
             parser.addProduction(t["statements"], new List<Token> { });
+
+            parser.addProduction(t["if statement"], new List<Token> { t["if"] });
+            parser.addProduction(t["expr"], new List<Token> { t["int"] }); //variable declaration is parsed as an expression
+            parser.addProduction(t["expr"], new List<Token> { t["boolean"] });
+            parser.addProduction(t["expr"], new List<Token> { id });
+            parser.addProduction(t["expr"], new List<Token> { intV });
+            parser.addProduction(t["expr"], new List<Token> { boolV });
+            parser.addProduction(t["expr"], new List<Token> { t["("], t["expr"], t[")"] });
+            parser.addProduction(t["expr"], new List<Token> { t["new"] });
+            parser.addProduction(t["expr"], new List<Token> { not });
+            parser.addProduction(t["expr"], new List<Token> { o["-"] });
+            parser.addProduction(t["expr"], new List<Token> { t["this"] });
+            parser.addProduction(t["expr"], new List<Token> { t["true"] });
+            parser.addProduction(t["expr"], new List<Token> { t["false"] });
 
             parser.setStartSymbol(t["prog"]);
             parser.prepareForParsing();

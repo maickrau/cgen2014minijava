@@ -411,8 +411,60 @@ namespace cgen2014minijava
             }
             return predictToken;
         }
+        private void parseIf(SyntaxNode currentNode, List<Token> tokens, ref int loc)
+        {
+            currentNode.children = new List<SyntaxNode>();
+            //if
+            SyntaxNode child = new SyntaxNode(new Keyword("if"));
+            child.parent = currentNode;
+            parse(child, tokens, ref loc);
+            currentNode.children.Add(child);
+            //(
+            child = new SyntaxNode(new Keyword("("));
+            child.parent = currentNode;
+            parse(child, tokens, ref loc);
+            currentNode.children.Add(child);
+            //expr
+            child = new SyntaxNode(new NonTerminal("expr"));
+            child.parent = currentNode;
+            parse(child, tokens, ref loc);
+            currentNode.children.Add(child);
+            //)
+            child = new SyntaxNode(new Keyword(")"));
+            child.parent = currentNode;
+            parse(child, tokens, ref loc);
+            currentNode.children.Add(child);
+            //stmt
+            child = new SyntaxNode(new NonTerminal("statement"));
+            child.parent = currentNode;
+            parse(child, tokens, ref loc);
+            currentNode.children.Add(child);
+            //else?
+            if (getPredictToken(tokens, loc).Equals(new Keyword("else")))
+            {
+                loc++;
+                child = new SyntaxNode(new NonTerminal("statement"));
+                child.parent = currentNode;
+                parse(child, tokens, ref loc);
+                currentNode.children.Add(child);
+            }
+        }
+        private void parseExpr(SyntaxNode currentNode, List<Token> tokens, ref int loc)
+        {
+            loc++;
+        }
         private void parse(SyntaxNode currentNode, List<Token> tokens, ref int loc)
         {
+            if (currentNode.token.Equals(new NonTerminal("if statement")))
+            {
+                parseIf(currentNode, tokens, ref loc);
+                return;
+            }
+            if (currentNode.token.Equals(new NonTerminal("expr")))
+            {
+                parseExpr(currentNode, tokens, ref loc);
+                return;
+            }
             if (languageTerminals.Contains(currentNode.token))
             {
                 if (loc >= tokens.Count)
