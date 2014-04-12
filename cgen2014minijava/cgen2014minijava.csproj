@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AST.cs" />
     <Compile Include="Decommenter.cs" />
     <Compile Include="MiniJavaGrammar.cs" />
     <Compile Include="NFA.cs" />

@@ -57,6 +57,10 @@ namespace cgen2014minijava
     public class SyntaxTree
     {
         public SyntaxNode root;
+        public void DebugPrint()
+        {
+            root.debugPrint(0);
+        }
         public SyntaxTree(SyntaxNode root)
         {
             this.root = root;
@@ -69,6 +73,18 @@ namespace cgen2014minijava
         public Token token;
         public SyntaxNode parent;
         public List<SyntaxNode> children;
+        public void debugPrint(int depth)
+        {
+            for (int i = 0; i < depth; i++)
+            {
+                System.Console.Write(" ");
+            }
+            System.Console.WriteLine(token);
+            foreach (SyntaxNode n in children)
+            {
+                n.debugPrint(depth + 1);
+            }
+        }
         public SyntaxNode(Token token)
         {
             this.token = token;
@@ -464,6 +480,7 @@ namespace cgen2014minijava
         }
         private void parseExpr(SyntaxNode currentNode, List<Token> tokens, ref int loc)
         {
+            System.Console.WriteLine("parse expr: " + currentNode.token);
             List<Token> thisExpression = new List<Token>();
             int start = loc;
             Token t = getPredictToken(tokens, loc);
@@ -494,7 +511,20 @@ namespace cgen2014minijava
                     if (realTokens[0] is Identifier || realTokens[0].Equals(new Keyword("int")) || realTokens[0].Equals(new Keyword("bool")))
                     {
                         //variable declaration
-                        currentNode.token = realTokens[0];
+                        currentNode.token = new NonTerminal("variable decl");
+                        currentNode.token.position = realTokens[0].position;
+                        currentNode.token.line = realTokens[0].line;
+                        SyntaxNode typeNode = new SyntaxNode(realTokens[0]);
+                        typeNode.token = new NonTerminal("type");
+                        typeNode.parent = currentNode;
+                        currentNode.children.Add(typeNode);
+                        SyntaxNode type = new SyntaxNode(realTokens[0]);
+                        type.parent = typeNode;
+                        typeNode.children.Add(type);
+                        SyntaxNode maybeArray = new SyntaxNode(realTokens[0]);
+                        maybeArray.token = new NonTerminal("maybe array");
+                        maybeArray.parent = typeNode;
+                        typeNode.children.Add(maybeArray);
                         SyntaxNode id = new SyntaxNode(realTokens[1]);
                         id.parent = currentNode;
                         currentNode.children.Add(id);
@@ -502,7 +532,10 @@ namespace cgen2014minijava
                     }
                 }
             }
-            parseExprInternal(currentNode, thisExpression, realTokens);
+            SyntaxNode newNode = new SyntaxNode(tokens[0]);
+            newNode.parent = currentNode;
+            currentNode.children.Add(newNode);
+            parseExprInternal(newNode, thisExpression, realTokens);
         }
         private void parseExprInternal(SyntaxNode currentNode, List<Token> expression, List<Token> realTokens)
         {
@@ -520,7 +553,7 @@ namespace cgen2014minijava
             }
             if (expression.Count == 1)
             {
-                if (!(expression[0] is Identifier) && !(expression[0] is IntLiteral) && !(expression[0] is BoolLiteral))
+                if (!(expression[0] is Identifier) && !(expression[0] is IntLiteral) && !(expression[0] is BoolLiteral) && !(expression[0].Equals(new Keyword("this"))))
                 {
                     addError(expression[0], "Expected identifier or value");
                 }
@@ -545,12 +578,17 @@ namespace cgen2014minijava
             int parenthesisStart = -1;
             int arrayDepth = 0;
             int arrayStart = -1;
+            int lastNew = -1;
             int lastSuperSpecial = -1; // [], () and ., eg: things[5], doThings(), thing.value
             int lastMultiplicative = -1;
             int lastAdditive = -1;
             int lastComparative = -1;
             int lastEquals = -1;
             int lastLogical = -1;
+            if (expression[0].Equals(new Keyword("new")))
+            {
+                lastNew = 0;
+            }
             if (expression[0].Equals(new Keyword("(")))
             {
                 parenthesisStart = 0;
@@ -560,7 +598,11 @@ namespace cgen2014minijava
             {
                 if (parenthesisDepth == 0 && arrayDepth == 0)
                 {
-                    if (expression[i].Equals(new Keyword(".")) || expression[i].Equals(new Keyword("[")) || expression[i].Equals(new Keyword("(")))
+                    if (expression[i].Equals(new Keyword(".")))
+                    {
+                        lastSuperSpecial = i;
+                    }
+                    if ((i == 1 || !expression[i-2].Equals(new Keyword("new"))) && (expression[i].Equals(new Keyword("[")) || expression[i].Equals(new Keyword("("))))
                     {
                         lastSuperSpecial = i;
                     }
@@ -723,6 +765,15 @@ namespace cgen2014minijava
                 left.parent = currentNode;
                 currentNode.children.Insert(0, left);
                 currentNode.token = expression[lastSuperSpecial];
+                return;
+            }
+            else if (lastNew != -1)
+            {
+                currentNode.token = realTokens[lastNew];
+                SyntaxNode child = new SyntaxNode(realTokens[lastNew + 1]);
+                child.parent = currentNode;
+                currentNode.children.Add(child);
+                parseExprInternal(child, expression.GetRange(1, expression.Count - 1), realTokens.GetRange(1, realTokens.Count - 1));
                 return;
             }
             if (splitAt != -1)

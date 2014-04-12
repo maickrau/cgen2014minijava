@@ -112,7 +112,7 @@ namespace cgen2014minijava
             parser.addProduction(t["formals"], new List<Token> { });
             parser.addProduction(t["formals"], new List<Token> { t["formal"], t["more formals"] });
             parser.addProduction(t["formal"], new List<Token> { t["type"], id });
-            parser.addProduction(t["more formals"], new List<Token> { t[","], t["type"], id, t["more formals"] });
+            parser.addProduction(t["more formals"], new List<Token> { t[","], t["formal"], t["more formals"] });
             parser.addProduction(t["more formals"], new List<Token> { });
             parser.addProduction(t["type"], new List<Token> { t["base type"], t["maybe array"] });
             parser.addProduction(t["base type"], new List<Token> { t["int"] });
@@ -132,7 +132,7 @@ namespace cgen2014minijava
             parser.addProduction(t["statement"], new List<Token> { t["return"], t["expr"], t[";"] });
             parser.addProduction(t["statement"], new List<Token> { t["expr"], t["statement expr"] });
             parser.addProduction(t["statement expr"], new List<Token> { t[";"] }); //method call or variable declaration
-            parser.addProduction(t["statement expr"], new List<Token> { t["="], t["expr"] }); //variable declaration can be initialized
+            parser.addProduction(t["statement expr"], new List<Token> { t["="], t["expr"], t[";"] }); //variable declaration can be initialized
             parser.addProduction(t["statements"], new List<Token> { t["statement"], t["statements"] });
             parser.addProduction(t["statements"], new List<Token> { });
 

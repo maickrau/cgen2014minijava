@@ -43,10 +43,10 @@ namespace cgen2014minijavaTest
             MiniJavaGrammar g = new MiniJavaGrammar();
             String p = "class main { public static void main() { assert(1+2*3); } }";
             SyntaxTree t = g.parse(p);
-            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].token);
-            Assert.AreEqual(2, t.root.children[0].children[7].children[0].children[2].children.Count);
-            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].children[1].token);
-            Assert.AreEqual(3, ((IntLiteral)t.root.children[0].children[7].children[0].children[2].children[1].children[1].token).value);
+            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].children[0].token);
+            Assert.AreEqual(2, t.root.children[0].children[7].children[0].children[2].children[0].children.Count);
+            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].children[0].children[1].token);
+            Assert.AreEqual(3, ((IntLiteral)t.root.children[0].children[7].children[0].children[2].children[0].children[1].children[1].token).value);
         }
         [TestMethod]
         public void parsesExpressionWithExtraParenthesis()
@@ -54,10 +54,10 @@ namespace cgen2014minijavaTest
             MiniJavaGrammar g = new MiniJavaGrammar();
             String p = "class main { public static void main() { assert(((1+2*3))); } }";
             SyntaxTree t = g.parse(p);
-            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].token);
-            Assert.AreEqual(2, t.root.children[0].children[7].children[0].children[2].children.Count);
-            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].children[1].token);
-            Assert.AreEqual(3, ((IntLiteral)t.root.children[0].children[7].children[0].children[2].children[1].children[1].token).value);
+            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].children[0].token);
+            Assert.AreEqual(2, t.root.children[0].children[7].children[0].children[2].children[0].children.Count);
+            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].children[0].children[1].token);
+            Assert.AreEqual(3, ((IntLiteral)t.root.children[0].children[7].children[0].children[2].children[0].children[1].children[1].token).value);
         }
         [TestMethod]
         public void parsesExpressionWithActualParenthesis()
@@ -65,10 +65,11 @@ namespace cgen2014minijavaTest
             MiniJavaGrammar g = new MiniJavaGrammar();
             String p = "class main { public static void main() { assert((1+2)*3); } }";
             SyntaxTree t = g.parse(p);
-            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].token);
-            Assert.AreEqual(2, t.root.children[0].children[7].children[0].children[2].children.Count);
-            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].children[0].token);
-            Assert.AreEqual(2, ((IntLiteral)t.root.children[0].children[7].children[0].children[2].children[0].children[1].token).value);
+            Assert.AreEqual(new NonTerminal("expr"), t.root.children[0].children[7].children[0].children[2].token);
+            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].children[0].token);
+            Assert.AreEqual(2, t.root.children[0].children[7].children[0].children[2].children[0].children.Count);
+            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].children[0].children[0].token);
+            Assert.AreEqual(2, ((IntLiteral)t.root.children[0].children[7].children[0].children[2].children[0].children[0].children[1].token).value);
         }
         [TestMethod]
         public void parsesMemberArrayAccess()
@@ -76,8 +77,9 @@ namespace cgen2014minijavaTest
             MiniJavaGrammar g = new MiniJavaGrammar();
             String p = "class main { public static void main() { assert(a.b[1]); } }";
             SyntaxTree t = g.parse(p);
-            Assert.AreEqual(new Keyword("["), t.root.children[0].children[7].children[0].children[2].token);
-            Assert.AreEqual(new Keyword("."), t.root.children[0].children[7].children[0].children[2].children[0].token);
+            Assert.AreEqual(new NonTerminal("expr"), t.root.children[0].children[7].children[0].children[2].token);
+            Assert.AreEqual(new Keyword("["), t.root.children[0].children[7].children[0].children[2].children[0].token);
+            Assert.AreEqual(new Keyword("."), t.root.children[0].children[7].children[0].children[2].children[0].children[0].token);
         }
         [TestMethod]
         public void parsesMethodCall()
@@ -85,10 +87,11 @@ namespace cgen2014minijavaTest
             MiniJavaGrammar g = new MiniJavaGrammar();
             String p = "class main { public static void main() { assert(a.b(2, 3)); } }";
             SyntaxTree t = g.parse(p);
-            Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].token);
-            Assert.AreEqual(new Keyword("."), t.root.children[0].children[7].children[0].children[2].children[0].token);
-            Assert.AreEqual(new IntLiteral("2"), t.root.children[0].children[7].children[0].children[2].children[1].token);
-            Assert.AreEqual(new IntLiteral("3"), t.root.children[0].children[7].children[0].children[2].children[2].token);
+            Assert.AreEqual(new NonTerminal("expr"), t.root.children[0].children[7].children[0].children[2].token);
+            Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].children[0].token);
+            Assert.AreEqual(new Keyword("."), t.root.children[0].children[7].children[0].children[2].children[0].children[0].token);
+            Assert.AreEqual(new IntLiteral("2"), t.root.children[0].children[7].children[0].children[2].children[0].children[1].token);
+            Assert.AreEqual(new IntLiteral("3"), t.root.children[0].children[7].children[0].children[2].children[0].children[2].token);
         }
         [TestMethod]
         public void parsesComplexExpression()
@@ -96,19 +99,30 @@ namespace cgen2014minijavaTest
             MiniJavaGrammar g = new MiniJavaGrammar();
             String p = "class main { public static void main() { assert(a.b(ab[d.c(1, 2)], d())+5*a.f()()); } }";
             SyntaxTree t = g.parse(p);
-            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].token);
-            Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].children[0].token);
-            Assert.AreEqual(new Keyword("."), t.root.children[0].children[7].children[0].children[2].children[0].children[0].token);
-            Assert.AreEqual(new Keyword("["), t.root.children[0].children[7].children[0].children[2].children[0].children[1].token);
+            Assert.AreEqual(new NonTerminal("expr"), t.root.children[0].children[7].children[0].children[2].token);
+            Assert.AreEqual(new Operator("+"), t.root.children[0].children[7].children[0].children[2].children[0].token);
+            Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].children[0].children[0].token);
+            Assert.AreEqual(new Keyword("."), t.root.children[0].children[7].children[0].children[2].children[0].children[0].children[0].token);
+            Assert.AreEqual(new Keyword("["), t.root.children[0].children[7].children[0].children[2].children[0].children[0].children[1].token);
+            Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].children[0].children[0].children[1].children[1].token);
+            Assert.AreEqual(new Keyword("."), t.root.children[0].children[7].children[0].children[2].children[0].children[0].children[1].children[1].children[0].token);
+            Assert.AreEqual(new IntLiteral("1"), t.root.children[0].children[7].children[0].children[2].children[0].children[0].children[1].children[1].children[1].token);
+            Assert.AreEqual(new IntLiteral("2"), t.root.children[0].children[7].children[0].children[2].children[0].children[0].children[1].children[1].children[2].token);
+            Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].children[0].children[0].children[2].token);
+            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].children[0].children[1].token);
             Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].children[0].children[1].children[1].token);
-            Assert.AreEqual(new Keyword("."), t.root.children[0].children[7].children[0].children[2].children[0].children[1].children[1].children[0].token);
-            Assert.AreEqual(new IntLiteral("1"), t.root.children[0].children[7].children[0].children[2].children[0].children[1].children[1].children[1].token);
-            Assert.AreEqual(new IntLiteral("2"), t.root.children[0].children[7].children[0].children[2].children[0].children[1].children[1].children[2].token);
-            Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].children[0].children[2].token);
-            Assert.AreEqual(new Operator("*"), t.root.children[0].children[7].children[0].children[2].children[1].token);
-            Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].children[1].children[1].token);
-            Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].children[1].children[1].children[0].token);
-            Assert.AreEqual(new Keyword("."), t.root.children[0].children[7].children[0].children[2].children[1].children[1].children[0].children[0].token);
+            Assert.AreEqual(new Keyword("("), t.root.children[0].children[7].children[0].children[2].children[0].children[1].children[1].children[0].token);
+            Assert.AreEqual(new Keyword("."), t.root.children[0].children[7].children[0].children[2].children[0].children[1].children[1].children[0].children[0].token);
+        }
+        [TestMethod]
+        public void parsesStatements()
+        {
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String p = "class main { public static void main() { assert(1); assert(2); assert(3); } }";
+            SyntaxTree t = g.parse(p);
+            Assert.AreEqual(new Keyword("assert"), t.root.children[0].children[7].children[0].children[0].token);
+            Assert.AreEqual(new Keyword("assert"), t.root.children[0].children[7].children[1].children[0].children[0].token);
+            Assert.AreEqual(new Keyword("assert"), t.root.children[0].children[7].children[1].children[1].children[0].children[0].token);
         }
     }
 }

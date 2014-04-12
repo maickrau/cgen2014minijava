@@ -50,6 +50,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="ASTTest.cs" />
     <Compile Include="MiniJavaGrammarTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
