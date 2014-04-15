@@ -480,7 +480,6 @@ namespace cgen2014minijava
         }
         private void parseExpr(SyntaxNode currentNode, List<Token> tokens, ref int loc)
         {
-            System.Console.WriteLine("parse expr: " + currentNode.token);
             List<Token> thisExpression = new List<Token>();
             int start = loc;
             Token t = getPredictToken(tokens, loc);
@@ -504,30 +503,21 @@ namespace cgen2014minijava
                 t = getPredictToken(tokens, loc);
             }
             List<Token> realTokens = tokens.GetRange(start, loc - start);
-            if (thisExpression.Count == 2)
+            if ((realTokens.Count == 2 || realTokens.Count == 4) && realTokens[realTokens.Count-1] is Identifier)
             {
-                if (realTokens[1] is Identifier)
+                if (realTokens[0] is Identifier || realTokens[0].Equals(new Keyword("int")) || realTokens[0].Equals(new Keyword("bool")))
                 {
-                    if (realTokens[0] is Identifier || realTokens[0].Equals(new Keyword("int")) || realTokens[0].Equals(new Keyword("bool")))
+                    bool canBeDeclaration = true;
+                    if (realTokens.Count == 4)
                     {
-                        //variable declaration
-                        currentNode.token = new NonTerminal("variable decl");
-                        currentNode.token.position = realTokens[0].position;
-                        currentNode.token.line = realTokens[0].line;
-                        SyntaxNode typeNode = new SyntaxNode(realTokens[0]);
-                        typeNode.token = new NonTerminal("type");
-                        typeNode.parent = currentNode;
-                        currentNode.children.Add(typeNode);
-                        SyntaxNode type = new SyntaxNode(realTokens[0]);
-                        type.parent = typeNode;
-                        typeNode.children.Add(type);
-                        SyntaxNode maybeArray = new SyntaxNode(realTokens[0]);
-                        maybeArray.token = new NonTerminal("maybe array");
-                        maybeArray.parent = typeNode;
-                        typeNode.children.Add(maybeArray);
-                        SyntaxNode id = new SyntaxNode(realTokens[1]);
-                        id.parent = currentNode;
-                        currentNode.children.Add(id);
+                        if (!realTokens[1].Equals(new Keyword("[")) || !realTokens[2].Equals(new Keyword("]")))
+                        {
+                            canBeDeclaration = false;
+                        }
+                    }
+                    if (canBeDeclaration)
+                    {
+                        parseVariableDeclaration(currentNode, realTokens);
                         return;
                     }
                 }
@@ -537,23 +527,46 @@ namespace cgen2014minijava
             currentNode.children.Add(newNode);
             parseExprInternal(newNode, thisExpression, realTokens);
         }
+        private void parseVariableDeclaration(SyntaxNode currentNode, List<Token> realTokens)
+        {
+            currentNode.token = new NonTerminal("variable decl");
+            currentNode.token.position = realTokens[0].position;
+            currentNode.token.line = realTokens[0].line;
+
+            SyntaxNode typeNode = new SyntaxNode(realTokens[0]);
+            currentNode.children.Add(typeNode);
+            typeNode.token = new NonTerminal("type");
+            typeNode.parent = currentNode;
+
+            SyntaxNode type = new SyntaxNode(realTokens[0]);
+            type.parent = typeNode;
+            typeNode.children.Add(type);
+
+            SyntaxNode maybeArray = new SyntaxNode(realTokens[0]);
+            maybeArray.token = new NonTerminal("maybe array");
+            if (realTokens.Count == 4)
+            {
+                SyntaxNode array = new SyntaxNode(realTokens[1]);
+                array.parent = maybeArray;
+                maybeArray.children.Add(array);
+            }
+            maybeArray.parent = typeNode;
+            typeNode.children.Add(maybeArray);
+
+            SyntaxNode id = new SyntaxNode(realTokens[realTokens.Count - 1]);
+            id.parent = currentNode;
+            currentNode.children.Add(id);
+            return;
+        }
         private void parseExprInternal(SyntaxNode currentNode, List<Token> expression, List<Token> realTokens)
         {
-            
-            StringBuilder sb = new StringBuilder();
-            foreach (Token e in realTokens)
-            {
-                sb.Append(e).Append(", ");
-            }
-            System.Console.WriteLine("Parseexpr " + sb.ToString());
-            
             if (expression.Count == 0)
             {
                 throw new Exception("Something went wrong! Expression has 0 tokens");
             }
             if (expression.Count == 1)
             {
-                if (!(expression[0] is Identifier) && !(expression[0] is IntLiteral) && !(expression[0] is BoolLiteral) && !(expression[0].Equals(new Keyword("this"))))
+                if (!(expression[0] is Identifier) && !(expression[0] is IntLiteral) && !(expression[0] is BoolLiteral) && !(expression[0].Equals(new Keyword("this"))) && !(expression[0].Equals(new Keyword("length"))) && !(expression[0].Equals(new Keyword("int"))) && !(expression[0].Equals(new Keyword("boolean"))))
                 {
                     addError(expression[0], "Expected identifier or value");
                 }
@@ -802,14 +815,6 @@ namespace cgen2014minijava
         }
         private List<SyntaxNode> parseArguments(List<Token> expression, List<Token> realTokens)
         {
-
-            StringBuilder sb = new StringBuilder();
-            foreach (Token e in realTokens)
-            {
-                sb.Append(e).Append(", ");
-            }
-            System.Console.WriteLine("Parseargs " + sb.ToString());
-
             if (expression.Count == 0)
             {
                 return new List<SyntaxNode>();

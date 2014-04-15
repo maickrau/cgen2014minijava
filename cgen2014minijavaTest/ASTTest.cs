@@ -114,18 +114,22 @@ namespace cgen2014minijavaTest
             String s = @"
                 class main 
                 { 
-                    public static void main() 
-                    { 
+                    public static void main() { }
+                }
+                class other
+                {
+                    public void f(int a, int b, int c) 
+                    {
                         f(a, 2, 3);
                     }
                 }
 ";
             ProgramNode t = p.parse(g.parse(s));
-            Assert.IsInstanceOfType(t.mainClass.methods[0].statements.statements[0], typeof(FunctionCall));
-            Assert.AreEqual(3, ((FunctionCall)t.mainClass.methods[0].statements.statements[0]).args.Count);
-            Assert.AreEqual("a", ((LocalOrMemberReference)((FunctionCall)t.mainClass.methods[0].statements.statements[0]).args[0]).var.name);
-            Assert.AreEqual(2, ((IntConstant)((FunctionCall)t.mainClass.methods[0].statements.statements[0]).args[1]).value);
-            Assert.AreEqual(3, ((IntConstant)((FunctionCall)t.mainClass.methods[0].statements.statements[0]).args[2]).value);
+            Assert.IsInstanceOfType(t.classes[1].methods[0].statements.statements[0], typeof(FunctionCall));
+            Assert.AreEqual(3, ((FunctionCall)t.classes[1].methods[0].statements.statements[0]).args.Count);
+            Assert.AreEqual("a", ((LocalOrMemberReference)((FunctionCall)t.classes[1].methods[0].statements.statements[0]).args[0]).var.name);
+            Assert.AreEqual(2, ((IntConstant)((FunctionCall)t.classes[1].methods[0].statements.statements[0]).args[1]).value);
+            Assert.AreEqual(3, ((IntConstant)((FunctionCall)t.classes[1].methods[0].statements.statements[0]).args[2]).value);
         }
         [TestMethod]
         public void parsesThis()
@@ -135,7 +139,13 @@ namespace cgen2014minijavaTest
             String s = @"
                 class main 
                 { 
-                    public static void main() 
+                    public static void main() {}
+                }
+                class other
+                {
+                    int a;
+                    other b;
+                    public int f(int e, int c, int d)
                     { 
                         this.f(a, 2, 3);
                         this.a = 1;
@@ -144,14 +154,14 @@ namespace cgen2014minijavaTest
                 }
 ";
             ProgramNode t = p.parse(g.parse(s));
-            Assert.AreEqual(3, t.mainClass.methods[0].statements.statements.Count);
-            Assert.IsInstanceOfType(t.mainClass.methods[0].statements.statements[0], typeof(FunctionCall));
-            Assert.IsInstanceOfType(t.mainClass.methods[0].statements.statements[1], typeof(AssignmentNode));
-            Assert.IsInstanceOfType(t.mainClass.methods[0].statements.statements[2], typeof(AssignmentNode));
-            Assert.IsInstanceOfType(((FunctionCall)t.mainClass.methods[0].statements.statements[0]).f.obj, typeof(ThisNode));
-            Assert.IsInstanceOfType(((AssignmentNode)t.mainClass.methods[0].statements.statements[1]).target, typeof(ObjectMemberReference));
-            Assert.IsInstanceOfType(((ObjectMemberReference)((AssignmentNode)t.mainClass.methods[0].statements.statements[1]).target).obj, typeof(ThisNode));
-            Assert.IsInstanceOfType(((AssignmentNode)t.mainClass.methods[0].statements.statements[2]).value, typeof(ThisNode));
+            Assert.AreEqual(3, t.classes[1].methods[0].statements.statements.Count);
+            Assert.IsInstanceOfType(t.classes[1].methods[0].statements.statements[0], typeof(FunctionCall));
+            Assert.IsInstanceOfType(t.classes[1].methods[0].statements.statements[1], typeof(AssignmentNode));
+            Assert.IsInstanceOfType(t.classes[1].methods[0].statements.statements[2], typeof(AssignmentNode));
+            Assert.IsInstanceOfType(((FunctionCall)t.classes[1].methods[0].statements.statements[0]).f.obj, typeof(ThisNode));
+            Assert.IsInstanceOfType(((AssignmentNode)t.classes[1].methods[0].statements.statements[1]).target, typeof(ObjectMemberReference));
+            Assert.IsInstanceOfType(((ObjectMemberReference)((AssignmentNode)t.classes[1].methods[0].statements.statements[1]).target).obj, typeof(ThisNode));
+            Assert.IsInstanceOfType(((AssignmentNode)t.classes[1].methods[0].statements.statements[2]).value, typeof(ThisNode));
         }
         [TestMethod]
         public void parsesSampleProgram()
@@ -188,6 +198,94 @@ namespace cgen2014minijavaTest
             Assert.AreEqual(3, t.classes[1].methods[0].statements.statements.Count);
             Assert.AreEqual(1, t.classes[1].methods[0].statements.locals.Count);
             Assert.AreEqual("num_aux", t.classes[1].methods[0].statements.locals[0].name);
+        }
+        [TestMethod]
+        public void bindsNamesInSampleProgram()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class Factorial {
+                  public static void main () {
+                    System.out.println (new Fac ().ComputeFac (10));
+                  }
+                }
+                class Fac {
+                  public int ComputeFac (int num) {
+                    assert (num > -1);
+                    int num_aux;
+                    if (num == 0)
+                      num_aux = 1;
+                    else 
+                      num_aux = num * this.ComputeFac (num-1);
+                    return num_aux;
+                  }
+                }
+                ";
+            ProgramNode t = p.parse(g.parse(s));
+            IfNode iff = (IfNode)t.classes[1].methods[0].statements.statements[1];
+            ReturnNode ret = (ReturnNode)t.classes[1].methods[0].statements.statements[2];
+            VariableNode num = t.classes[1].methods[0].arguments[0];
+            VariableNode num_aux = t.classes[1].methods[0].statements.locals[0];
+            //not only equal but the same reference too
+            Assert.IsTrue(num == ((LocalOrMemberReference)((BinaryOperatorCall)iff.condition).lhs).var);
+            Assert.IsTrue(num_aux == ((LocalOrMemberReference)((AssignmentNode)iff.thenNode).target).var);
+            Assert.IsTrue(num_aux == ((LocalOrMemberReference)ret.value).var);
+        }
+        [TestMethod]
+        public void parsesArrayLength()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    int[] a;
+                    assert(a.length);
+                  }
+                }
+                ";
+            ProgramNode t = p.parse(g.parse(s));
+            Assert.IsInstanceOfType(t.mainClass.methods[0].statements.locals[0].type, typeof(ArrayType));
+            Assert.AreEqual(typeof(Int32), ((BaseType)((ArrayType)t.mainClass.methods[0].statements.locals[0].type).baseType).type);
+            Assert.IsInstanceOfType(((AssertNode)t.mainClass.methods[0].statements.statements[0]).value, typeof(ArrayLengthRead));
+        }
+        [TestMethod]
+        public void bindsArrayReference()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    int[] a;
+                    a = new int[10];
+                    a[3] = 1;
+                  }
+                }
+                ";
+            ProgramNode t = p.parse(g.parse(s));
+            VariableNode a = t.mainClass.methods[0].statements.locals[0];
+            AssignmentNode assign1 = (AssignmentNode)t.mainClass.methods[0].statements.statements[0];
+            Assert.IsInstanceOfType(assign1.target, typeof(LocalOrMemberReference));
+            Assert.IsTrue(a == ((LocalOrMemberReference)assign1.target).var);
+            AssignmentNode assign2 = (AssignmentNode)t.mainClass.methods[0].statements.statements[1];
+            Assert.IsInstanceOfType(assign2.target, typeof(ArrayReference));
+            Assert.IsTrue(a == ((LocalOrMemberReference)((ArrayReference)assign2.target).array).var);
+            Assert.IsInstanceOfType(((ArrayReference)assign2.target).index, typeof(IntConstant));
+            IntConstant index = (IntConstant)((ArrayReference)assign2.target).index;
+            Assert.AreEqual(3, index.value);
+            Assert.IsInstanceOfType(assign2.value, typeof(IntConstant));
+            Assert.AreEqual(1, ((IntConstant)assign2.value).value);
+        }
+        [TestMethod]
+        public void parsesUnaryMinus()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = "class main { public static void main() { assert(-1); } }";
+            ProgramNode t = p.parse(g.parse(s));
+            Assert.IsInstanceOfType(((AssertNode)t.mainClass.methods[0].statements.statements[0]).value, typeof(UnaryOperatorCall));
         }
     }
 }

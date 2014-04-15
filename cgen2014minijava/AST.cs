@@ -3,10 +3,75 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
 
 namespace cgen2014minijava
 {
-    public class ProgramNode
+    abstract public class ASTNode
+    {
+        public int position;
+        public int line;
+        public override bool Equals(Object o)
+        {
+            return false;
+        }
+        public override int GetHashCode()
+        {
+            return position.GetHashCode() * line.GetHashCode();
+        }
+        public void debugPrint(int depth)
+        {
+            for (int i = 0; i < depth; i++)
+            {
+                System.Console.Write(" ");
+            }
+            System.Console.WriteLine(this.GetType());
+            foreach (FieldInfo f in this.GetType().GetFields())
+            {
+                object o = f.GetValue(this);
+                if (o is ASTNode)
+                {
+                    ((ASTNode)o).debugPrint(depth + 1);
+                }
+                if (o is List<ASTNode>)
+                {
+                    foreach (ASTNode n in (List<ASTNode>)o)
+                    {
+                        ((ASTNode)n).debugPrint(depth + 1);
+                    }
+                }
+                if (o is List<VariableNode>)
+                {
+                    foreach (ASTNode n in (List<VariableNode>)o)
+                    {
+                        ((ASTNode)n).debugPrint(depth + 1);
+                    }
+                }
+                if (o is List<MethodNode>)
+                {
+                    foreach (ASTNode n in (List<MethodNode>)o)
+                    {
+                        ((ASTNode)n).debugPrint(depth + 1);
+                    }
+                }
+                if (o is List<StatementNode>)
+                {
+                    foreach (ASTNode n in (List<StatementNode>)o)
+                    {
+                        ((ASTNode)n).debugPrint(depth + 1);
+                    }
+                }
+                if (o is List<ExpressionNode>)
+                {
+                    foreach (ASTNode n in (List<ExpressionNode>)o)
+                    {
+                        ((ASTNode)n).debugPrint(depth + 1);
+                    }
+                }
+            }
+        }
+    }
+    public class ProgramNode : ASTNode
     {
         public ProgramNode()
         {
@@ -16,7 +81,7 @@ namespace cgen2014minijava
         public List<ClassNode> classes; //contains the main class
         public ClassNode mainClass;
     }
-    public class ClassNode
+    public class ClassNode : ASTNode
     {
         public ClassNode()
         {
@@ -37,7 +102,7 @@ namespace cgen2014minijava
             this.name = name;
         }
     }
-    public class MethodNode
+    public class MethodNode : ASTNode
     {
         public MethodNode()
         {
@@ -57,7 +122,7 @@ namespace cgen2014minijava
             this.name = name;
         }
     }
-    public class VariableNode
+    public class VariableNode : ASTNode
     {
         public VariableNode()
         {
@@ -74,7 +139,7 @@ namespace cgen2014minijava
             this.name = name;
         }
     }
-    abstract public class StatementNode
+    abstract public class StatementNode : ASTNode
     {
     }
     public class BlockStatementNode : StatementNode
@@ -184,7 +249,7 @@ namespace cgen2014minijava
         public ExpressionNode obj;
         public VariableNode member;
     }
-    //not actually an lvalue, just put here to make parsing simpler. Semantics shall check that this won't be assigned
+    //not actually an lvalue or an object member reference, just put here to make parsing simpler. Semantics shall check that this won't be assigned
     public class ArrayLengthRead : ObjectMemberReference
     {
     }
@@ -197,15 +262,39 @@ namespace cgen2014minijava
         public LValue array;
         public ExpressionNode index;
     }
-    abstract public class TypeNode
+    abstract public class TypeNode : ASTNode
     {
     }
     public class ArrayType : TypeNode
     {
+        public override bool Equals(object o)
+        {
+            if (!(o is ArrayType))
+            {
+                return false;
+            }
+            return baseType.Equals(((ArrayType)o).baseType);
+        }
+        public override string ToString()
+        {
+            return "ArrayType(" + baseType.ToString() + ")";
+        }
         public TypeNode baseType;
     }
     public class BaseType : TypeNode
     {
+        public override bool Equals(object o)
+        {
+            if (!(o is BaseType))
+            {
+                return false;
+            }
+            return type == ((BaseType)o).type;
+        }
+        public override string ToString()
+        {
+            return "BaseType(" + type.ToString() + ")";
+        }
         public BaseType(Type type)
         {
             this.type = type;
@@ -214,21 +303,411 @@ namespace cgen2014minijava
     }
     public class ClassType : TypeNode
     {
+        public override bool Equals(object o)
+        {
+            if (!(o is ClassType))
+            {
+                return false;
+            }
+            return type.name == ((ClassType)o).type.name;
+        }
+        public override string ToString()
+        {
+            return "ClassType(" + type.name + ")";
+        }
+        public ClassType(ClassNode type)
+        {
+            this.type = type;
+        }
         public ClassNode type;
+    }
+    public class SemanticError : Exception
+    {
+        public SemanticError(ASTNode node, String msg) : base("" + node.line + ":" + node.position + " Semantic error: " + msg)
+        {
+        }
     }
 
     public class ASTParser
     {
         public ASTParser()
         {
-            definedClasses = new Dictionary<String, ClassNode>();
-            inherits = new Dictionary<String, String>();
         }
-        private Dictionary<String, ClassNode> definedClasses;
-        private Dictionary<String, String> inherits;
+        private Dictionary<String, ClassNode> classTable;
+        private Stack<Dictionary<String, VariableNode>> variableTable;
+        private ClassNode currentClass;
+        private MethodNode currentMethod;
         public ProgramNode parse(SyntaxTree tree)
         {
-            return parseProgram(tree.root);
+            classTable = new Dictionary<String, ClassNode>();
+            variableTable = new Stack<Dictionary<String, VariableNode>>();
+            ProgramNode unbound = parseProgram(tree.root);
+            bindClassNames(unbound); //bind method return types to classes
+            bindNames(unbound); //bind all other names
+            return unbound;
+        }
+        private ClassNode getClass(String name)
+        {
+            return classTable[name];
+        }
+        private VariableNode getVariable(String name)
+        {
+            for (int i = variableTable.Count-1; i >= 0; i--)
+            {
+                if (variableTable.ElementAt(i).Keys.Contains(name))
+                {
+                    return variableTable.ElementAt(i)[name];
+                }
+            }
+            throw new Exception("this shouldn't happen: AST get variable name unknown var \"" + name + "\"");
+        }
+        private void bindClassNames(ProgramNode node)
+        {
+            foreach (ClassNode c in node.classes)
+            {
+                bindClassNames(c);
+            }
+        }
+        private void bindClassNames(ClassNode node)
+        {
+            foreach (MethodNode m in node.methods)
+            {
+                bindClassNames(m);
+            }
+        }
+        private void bindClassNames(MethodNode node)
+        {
+            if (node.type is ClassType)
+            {
+                node.type = new ClassType(getClass(((ClassType)node.type).type.name));
+            }
+        }
+        private void bindNames(ProgramNode node)
+        {
+            foreach (ClassNode c in node.classes)
+            {
+                bindNames(c);
+            }
+        }
+        private void bindNames(ClassNode node)
+        {
+            currentClass = node;
+            if (node.inherits is UnboundClassType)
+            {
+                node.inherits = getClass(node.inherits.name);
+            }
+            variableTable.Push(new Dictionary<String, VariableNode>());
+            foreach (VariableNode v in node.members)
+            {
+                bindNames(v);
+                variableTable.Peek().Add(v.name, v);
+            }
+            foreach (MethodNode m in node.methods)
+            {
+                bindNames(m);
+            }
+            variableTable.Pop();
+        }
+        private void bindNames(MethodNode node)
+        {
+            currentMethod = node;
+            bindNames(node.type);
+            variableTable.Push(new Dictionary<String, VariableNode>());
+            foreach (VariableNode v in node.arguments)
+            {
+                bindNames(v);
+                variableTable.Peek().Add(v.name, v);
+            }
+            bindNames(node.statements);
+            variableTable.Pop();
+        }
+        private void bindNames(BlockStatementNode node)
+        {
+            variableTable.Push(new Dictionary<String, VariableNode>());
+            foreach (VariableNode v in node.locals)
+            {
+                bindNames(v);
+                variableTable.Peek().Add(v.name, v);
+            }
+            foreach (StatementNode m in node.statements)
+            {
+                bindNames(m);
+            }
+            variableTable.Pop();
+        }
+        private void bindNames(VariableNode node)
+        {
+            bindNames(node.type);
+        }
+        private void bindNames(TypeNode node)
+        {
+            if (node is ArrayType)
+            {
+                bindNames(((ArrayType)node).baseType);
+            }
+            if (node is ClassType)
+            {
+                if (((ClassType)node).type is UnboundClassType)
+                {
+                    ((ClassType)node).type = getClass(((ClassType)node).type.name);
+                }
+            }
+        }
+        private void bindNames(StatementNode node)
+        {
+            if (node == null)
+            {
+                return;
+            }
+            if (node is BlockStatementNode)
+            {
+                bindNames((BlockStatementNode)node);
+            }
+            else if (node is WhileNode)
+            {
+                bindNames(((WhileNode)node).condition);
+                bindNames(((WhileNode)node).doThis);
+            }
+            else if (node is IfNode)
+            {
+                bindNames(((IfNode)node).condition);
+                bindNames(((IfNode)node).thenNode);
+                bindNames(((IfNode)node).elseNode);
+            }
+            else if (node is AssignmentNode)
+            {
+                bindNames((ExpressionNode)((AssignmentNode)node).target);
+                bindNames((ExpressionNode)((AssignmentNode)node).value);
+                if (!((AssignmentNode)node).target.type.Equals(((AssignmentNode)node).value.type))
+                {
+                    throw new SemanticError(node, "Assignment must have compatible types (" + ((AssignmentNode)node).target.type + " vs " + ((AssignmentNode)node).value.type + ")");
+                }
+            }
+            else if (node is ReturnNode)
+            {
+                bindNames(((ReturnNode)node).value);
+                if (!((ReturnNode)node).value.type.Equals(currentMethod.type))
+                {
+                    throw new SemanticError(node, "Return type must be same as function's declared type");
+                }
+            }
+            else if (node is AssertNode)
+            {
+                bindNames(((AssertNode)node).value);
+            }
+            else if (node is PrintNode)
+            {
+                bindNames(((PrintNode)node).value);
+            }
+            else if (node is ExpressionNode)
+            {
+                bindNames((ExpressionNode)node);
+            }
+        }
+        private void bindNames(ExpressionNode node)
+        {
+            if (node is ArrayLengthRead)
+            {
+                node.type = new BaseType(typeof(Int32));
+            }
+            else if (node is IntConstant)
+            {
+                node.type = new BaseType(typeof(Int32));
+            }
+            else if (node is BoolConstant)
+            {
+                node.type = new BaseType(typeof(Boolean));
+            }
+            else if (node is ThisNode)
+            {
+                node.type = new ClassType(currentClass);
+            }
+            else if (node is ObjectMethodReference)
+            {
+                bindNames((ObjectMethodReference)node);
+            }
+            else if (node is FunctionCall)
+            {
+                bindNames((FunctionCall)node);
+            }
+            else if (node is UnaryOperatorCall)
+            {
+                bindNames((UnaryOperatorCall)node);
+            }
+            else if (node is BinaryOperatorCall)
+            {
+                bindNames((BinaryOperatorCall)node);
+            }
+            else if (node is NewSingular)
+            {
+                bindNames((NewSingular)node);
+            }
+            else if (node is NewArray)
+            {
+                bindNames((NewArray)node);
+            }
+            else if (node is ObjectMemberReference)
+            {
+                bindNames((ObjectMemberReference)node);
+            }
+            else if (node is ArrayLengthRead)
+            {
+                bindNames((ArrayLengthRead)node);
+            }
+            else if (node is LocalOrMemberReference)
+            {
+                bindNames((LocalOrMemberReference)node);
+            }
+            else if (node is ArrayReference)
+            {
+                bindNames((ArrayReference)node);
+            }
+        }
+        private void bindNames(ObjectMethodReference node)
+        {
+            bindNames(node.obj);
+            if (!(node.obj.type is ClassType))
+            {
+                throw new SemanticError(node.obj, "Method call must be applied to a class");
+            }
+            ClassType objType = new ClassType(getClass(((ClassType)node.obj.type).type.name));
+            node.obj.type = objType;
+            MethodNode n = objType.type.methods.Find(m => m.name == node.method.name);
+            if (n == null)
+            {
+                throw new SemanticError(node.method, "Method not found");
+            }
+            node.method = n;
+            node.type = node.method.type;
+        }
+        private void bindNames(FunctionCall node)
+        {
+            bindNames(node.f);
+            foreach (ExpressionNode e in node.args)
+            {
+                bindNames(e);
+            }
+            if (node.args.Count != node.f.method.arguments.Count)
+            {
+                throw new SemanticError(node, "Wrong number of arguments, expected " + node.f.method.arguments.Count);
+            }
+            node.type = node.f.type;
+        }
+        private void bindNames(UnaryOperatorCall node)
+        {
+            bindNames(node.lhs);
+            if (node.lhs.type.Equals(new BaseType(typeof(Boolean))))
+            {
+                if (!node.op.Equals(new Operator("!")))
+                {
+                    throw new SemanticError(node, "Operator " + node.op.value + " can't be applied to booleans");
+                }
+                node.type = new BaseType(typeof(Boolean));
+            }
+            else if (node.lhs.type.Equals(new BaseType(typeof(Int32))))
+            {
+                if (!node.op.Equals(new Operator("-")) && !node.op.Equals(new Operator("+")))
+                {
+                    throw new SemanticError(node, "Operator " + node.op.value + " can't be applied to ints");
+                }
+                node.type = new BaseType(typeof(Int32));
+            }
+            else
+            {
+                throw new SemanticError(node, "Operator " + node.op.value + " can't be applied to type");
+            }
+        }
+        private void bindNames(BinaryOperatorCall node)
+        {
+            bindNames(node.lhs);
+            bindNames(node.rhs);
+            TypeNode resultType = operatorResultType(node.lhs.type, node.rhs.type, node.op);
+            if (resultType == null)
+            {
+                throw new SemanticError(node, "Operator " + node.op.value + " can't be applied to types");
+            }
+            node.type = operatorResultType(node.lhs.type, node.rhs.type, node.op);
+        }
+        private TypeNode operatorResultType(TypeNode lhs, TypeNode rhs, Operator op)
+        {
+            if (!lhs.Equals(rhs))
+            {
+                return null;
+            }
+            if (op.Equals(new Operator("==")))
+            {
+                return lhs;
+            }
+            if (!(lhs is BaseType))
+            {
+                return null;
+            }
+            if (op.Equals(new Operator("&&")))
+            {
+                if (lhs.Equals(new BaseType(typeof(Boolean))))
+                {
+                    return new BaseType(typeof(Boolean));
+                }
+                return null;
+            }
+            if (op.Equals(new Operator("||")))
+            {
+                if (lhs.Equals(new BaseType(typeof(Boolean))))
+                {
+                    return new BaseType(typeof(Boolean));
+                }
+                return null;
+            }
+            // op is one of < > + - * / %
+            if (lhs.Equals(new BaseType(typeof(Int32))))
+            {
+                return new BaseType(typeof(Int32));
+            }
+            return null;
+        }
+        private void bindNames(NewSingular node)
+        {
+            bindNames(node.newType);
+            node.type = node.newType;
+        }
+        private void bindNames(NewArray node)
+        {
+            bindNames(node.arrayType);
+            node.type = new ArrayType();
+            ((ArrayType)node.type).baseType = node.arrayType;
+        }
+        private void bindNames(ObjectMemberReference node)
+        {
+            bindNames(node.obj);
+            if (!(node.obj.type is ClassType))
+            {
+                throw new SemanticError(node.obj, "Member access can only be done on classes");
+            }
+            node.member = getClass(((ClassType)node.obj.type).type.name).members.Find(v => v.name == node.member.name);
+            if (node.member == null)
+            {
+                throw new SemanticError(node.member, "Member " + node.member.name + " not found in class " + ((ClassType)node.obj.type).type.name);
+            }
+            node.type = node.member.type;
+        }
+        private void bindNames(LocalOrMemberReference node)
+        {
+            node.var = getVariable(node.var.name);
+            node.type = node.var.type;
+        }
+        private void bindNames(ArrayReference node)
+        {
+            bindNames(node.array);
+            bindNames(node.index);
+            if (!(node.array.type is ArrayType))
+            {
+                throw new SemanticError(node, "Array reference must be applied to an array");
+            }
+            if (!node.index.type.Equals(new BaseType(typeof(Int32))))
+            {
+                throw new SemanticError(node.index, "Array reference index must be an int");
+            }
+            node.type = ((ArrayType)node.array.type).baseType;
         }
         private ProgramNode parseProgram(SyntaxNode node)
         {
@@ -250,6 +729,7 @@ namespace cgen2014minijava
             }
             ClassNode ret = new ClassNode();
             ret.name = ((Identifier)node.children[1].token).value;
+            classTable.Add(ret.name, ret);
             MethodNode mainMethod = new MethodNode();
             mainMethod.statements = parseStatements(node.children[7]);
             ret.methods.Add(mainMethod);
@@ -263,6 +743,7 @@ namespace cgen2014minijava
             }
             ClassNode ret = new ClassNode();
             ret.name = ((Identifier)node.children[1].token).value;
+            classTable.Add(ret.name, ret);
             ret.inherits = parseInheritance(ret, node.children[2]);
             parseDecls(ret, node.children[4]);
             return ret;
@@ -397,7 +878,7 @@ namespace cgen2014minijava
         }
         private ObjectMemberReference parseMemberVariableRef(SyntaxNode node)
         {
-            if (node.children[1].Equals(new Keyword("length")))
+            if (node.children[1].token.Equals(new Keyword("length")))
             {
                 ArrayLengthRead ret = new ArrayLengthRead();
                 ret.obj = parseExpression(node.children[0]);
@@ -485,8 +966,7 @@ namespace cgen2014minijava
         private NewSingular parseNewSingular(SyntaxNode node)
         {
             NewSingular ret = new NewSingular();
-            ClassType t = new ClassType();
-            t.type = new UnboundClassType(((Identifier)node.children[0].token).value);
+            ClassType t = new ClassType(new UnboundClassType(((Identifier)node.children[0].token).value));
             ret.newType = t;
             return ret;
         }
@@ -494,7 +974,7 @@ namespace cgen2014minijava
         {
             NewArray ret = new NewArray();
             ret.length = parseExpression(node.children[1]);
-            ret.arrayType = parseType(node.children[0]);
+            ret.arrayType = parseBaseType(node.children[0]);
             return ret;
         }
         private BinaryOperatorCall parseBinaryOperator(SyntaxNode node)
@@ -718,8 +1198,7 @@ namespace cgen2014minijava
             }
             if (node.token is Identifier)
             {
-                ClassType ret = new ClassType();
-                ret.type = new UnboundClassType(((Identifier)node.token).value);
+                ClassType ret = new ClassType(new UnboundClassType(((Identifier)node.token).value));
                 return ret;
             }
             throw new Exception("this shouldn't happen: AST parse base type unknown type");
