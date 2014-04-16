@@ -7,10 +7,15 @@ using System.Reflection;
 
 namespace cgen2014minijava
 {
-    abstract public class ASTNode
+    abstract public class ASTNode : Positionable
     {
-        public int position;
-        public int line;
+        protected ASTNode(Positionable t)
+        {
+            position = t.position;
+            line = t.line;
+        }
+        public int position { get; set; }
+        public int line { get; set; }
         public override bool Equals(Object o)
         {
             return false;
@@ -73,7 +78,7 @@ namespace cgen2014minijava
     }
     public class ProgramNode : ASTNode
     {
-        public ProgramNode()
+        public ProgramNode(Positionable t) : base(t)
         {
             classes = new List<ClassNode>();
             mainClass = null;
@@ -83,7 +88,7 @@ namespace cgen2014minijava
     }
     public class ClassNode : ASTNode
     {
-        public ClassNode()
+        public ClassNode(Positionable t) : base(t)
         {
             name = "";
             methods = new List<MethodNode>();
@@ -97,14 +102,14 @@ namespace cgen2014minijava
     }
     public class UnboundClassType : ClassNode
     {
-        public UnboundClassType(String name)
+        public UnboundClassType(String name, Positionable t) : base(t)
         {
             this.name = name;
         }
     }
     public class MethodNode : ASTNode
     {
-        public MethodNode()
+        public MethodNode(Positionable t) : base(t)
         {
             name = "";
             arguments = new List<VariableNode>();
@@ -117,14 +122,14 @@ namespace cgen2014minijava
     }
     public class UnboundMethodName : MethodNode
     {
-        public UnboundMethodName(String name)
+        public UnboundMethodName(String name, Positionable t) : base(t)
         {
             this.name = name;
         }
     }
     public class VariableNode : ASTNode
     {
-        public VariableNode()
+        public VariableNode(Positionable t) : base(t)
         {
             name = "";
             type = null;
@@ -134,17 +139,18 @@ namespace cgen2014minijava
     }
     public class UnboundVariableName : VariableNode
     {
-        public UnboundVariableName(String name)
+        public UnboundVariableName(String name, Positionable t) : base(t)
         {
             this.name = name;
         }
     }
     abstract public class StatementNode : ASTNode
     {
+        protected StatementNode(Positionable t) : base(t) { }
     }
     public class BlockStatementNode : StatementNode
     {
-        public BlockStatementNode()
+        public BlockStatementNode(Positionable t) : base(t)
         {
             locals = new List<VariableNode>();
             statements = new List<StatementNode>();
@@ -154,47 +160,56 @@ namespace cgen2014minijava
     }
     public class WhileNode : StatementNode
     {
+        public WhileNode(Positionable t) : base(t) { }
         public ExpressionNode condition;
         public StatementNode doThis;
     }
     public class IfNode : StatementNode
     {
+        public IfNode(Positionable t) : base(t) { }
         public ExpressionNode condition;
         public StatementNode thenNode;
         public StatementNode elseNode;
     }
     public class AssignmentNode : StatementNode
     {
+        public AssignmentNode(Positionable t) : base(t) { }
         public LValue target;
         public ExpressionNode value;
     }
     public class ReturnNode : StatementNode
     {
+        public ReturnNode(Positionable t) : base(t) { }
         public ExpressionNode value;
     }
     public class AssertNode : StatementNode
     {
+        public AssertNode(Positionable t) : base(t) { }
         public ExpressionNode value;
     }
     public class PrintNode : StatementNode
     {
+        public PrintNode(Positionable t) : base(t) { }
         public ExpressionNode value;
     }
     abstract public class ExpressionNode : StatementNode
     {
+        public ExpressionNode(Positionable t) : base(t) { }
         public TypeNode type;
     }
     public class ThisNode : ExpressionNode
     {
+        public ThisNode(Positionable t) : base(t) { }
     }
     public class ObjectMethodReference : ExpressionNode
     {
+        public ObjectMethodReference(Positionable t) : base(t) { }
         public ExpressionNode obj;
         public MethodNode method;
     }
     public class IntConstant : ExpressionNode
     {
-        public IntConstant(int value)
+        public IntConstant(int value, Positionable t) : base(t)
         {
             this.value = value;
         }
@@ -202,7 +217,7 @@ namespace cgen2014minijava
     }
     public class BoolConstant : ExpressionNode
     {
-        public BoolConstant(bool value)
+        public BoolConstant(bool value, Positionable t) : base(t)
         {
             this.value = value;
         }
@@ -210,7 +225,7 @@ namespace cgen2014minijava
     }
     public class FunctionCall : ExpressionNode
     {
-        public FunctionCall()
+        public FunctionCall(Positionable t) : base(t)
         {
             f = null;
             args = new List<ExpressionNode>();
@@ -220,53 +235,66 @@ namespace cgen2014minijava
     }
     public class UnaryOperatorCall : ExpressionNode
     {
+        public UnaryOperatorCall(Positionable t) : base(t) { }
         public Operator op;
         public ExpressionNode lhs;
     }
     public class BinaryOperatorCall : ExpressionNode
     {
+        public BinaryOperatorCall(Positionable t) : base(t) { }
         public Operator op;
         public ExpressionNode lhs;
         public ExpressionNode rhs;
     }
     public class NewNode : ExpressionNode
     {
+        public NewNode(Positionable t) : base(t) { }
     }
     public class NewSingular : NewNode
     {
+        public NewSingular(Positionable t) : base(t) { }
         public TypeNode newType;
     }
     public class NewArray : NewNode
     {
+        public NewArray(Positionable t) : base(t) { }
         public TypeNode arrayType;
         public ExpressionNode length;
     }
     abstract public class LValue : ExpressionNode
     {
+        public LValue(Positionable t) : base(t) { }
     }
     public class ObjectMemberReference : LValue
     {
+        public ObjectMemberReference(Positionable t) : base(t) { }
         public ExpressionNode obj;
         public VariableNode member;
     }
     //not actually an lvalue or an object member reference, just put here to make parsing simpler. Semantics shall check that this won't be assigned
     public class ArrayLengthRead : ObjectMemberReference
     {
+        public ArrayLengthRead(Positionable t) : base(t) { }
     }
     public class LocalOrMemberReference : LValue
     {
+        public LocalOrMemberReference(Positionable t) : base(t) { }
         public VariableNode var;
     }
     public class ArrayReference : LValue
     {
+        public ArrayReference(Positionable t) : base(t) { }
         public LValue array;
         public ExpressionNode index;
     }
     abstract public class TypeNode : ASTNode
     {
+        public TypeNode(Positionable t) : base(t) { }
+        public TypeNode(ASTNode t) : base(t) { }
     }
     public class ArrayType : TypeNode
     {
+        public ArrayType(Positionable t) : base(t) { }
         public override bool Equals(object o)
         {
             if (!(o is ArrayType))
@@ -283,6 +311,10 @@ namespace cgen2014minijava
     }
     public class BaseType : TypeNode
     {
+        public BaseType(Type type, Positionable t) : base(t)
+        {
+            this.type = type;
+        }
         public override bool Equals(object o)
         {
             if (!(o is BaseType))
@@ -295,14 +327,14 @@ namespace cgen2014minijava
         {
             return "BaseType(" + type.ToString() + ")";
         }
-        public BaseType(Type type)
-        {
-            this.type = type;
-        }
         public Type type;
     }
     public class ClassType : TypeNode
     {
+        public ClassType(ClassNode type, Positionable t) : base(t)
+        {
+            this.type = type;
+        }
         public override bool Equals(object o)
         {
             if (!(o is ClassType))
@@ -314,10 +346,6 @@ namespace cgen2014minijava
         public override string ToString()
         {
             return "ClassType(" + type.name + ")";
-        }
-        public ClassType(ClassNode type)
-        {
-            this.type = type;
         }
         public ClassNode type;
     }
@@ -379,7 +407,7 @@ namespace cgen2014minijava
         {
             if (node.type is ClassType)
             {
-                node.type = new ClassType(getClass(((ClassType)node.type).type.name));
+                node.type = new ClassType(getClass(((ClassType)node.type).type.name), node);
             }
         }
         private void bindNames(ProgramNode node)
@@ -508,19 +536,19 @@ namespace cgen2014minijava
         {
             if (node is ArrayLengthRead)
             {
-                node.type = new BaseType(typeof(Int32));
+                node.type = new BaseType(typeof(Int32), node);
             }
             else if (node is IntConstant)
             {
-                node.type = new BaseType(typeof(Int32));
+                node.type = new BaseType(typeof(Int32), node);
             }
             else if (node is BoolConstant)
             {
-                node.type = new BaseType(typeof(Boolean));
+                node.type = new BaseType(typeof(Boolean), node);
             }
             else if (node is ThisNode)
             {
-                node.type = new ClassType(currentClass);
+                node.type = new ClassType(currentClass, node);
             }
             else if (node is ObjectMethodReference)
             {
@@ -570,7 +598,7 @@ namespace cgen2014minijava
             {
                 throw new SemanticError(node.obj, "Method call must be applied to a class");
             }
-            ClassType objType = new ClassType(getClass(((ClassType)node.obj.type).type.name));
+            ClassType objType = new ClassType(getClass(((ClassType)node.obj.type).type.name), node.obj);
             node.obj.type = objType;
             MethodNode n = objType.type.methods.Find(m => m.name == node.method.name);
             if (n == null)
@@ -596,21 +624,21 @@ namespace cgen2014minijava
         private void bindNames(UnaryOperatorCall node)
         {
             bindNames(node.lhs);
-            if (node.lhs.type.Equals(new BaseType(typeof(Boolean))))
+            if (node.lhs.type.Equals(new BaseType(typeof(Boolean), node)))
             {
                 if (!node.op.Equals(new Operator("!")))
                 {
                     throw new SemanticError(node, "Operator " + node.op.value + " can't be applied to booleans");
                 }
-                node.type = new BaseType(typeof(Boolean));
+                node.type = new BaseType(typeof(Boolean), node);
             }
-            else if (node.lhs.type.Equals(new BaseType(typeof(Int32))))
+            else if (node.lhs.type.Equals(new BaseType(typeof(Int32), node)))
             {
                 if (!node.op.Equals(new Operator("-")) && !node.op.Equals(new Operator("+")))
                 {
                     throw new SemanticError(node, "Operator " + node.op.value + " can't be applied to ints");
                 }
-                node.type = new BaseType(typeof(Int32));
+                node.type = new BaseType(typeof(Int32), node);
             }
             else
             {
@@ -644,24 +672,24 @@ namespace cgen2014minijava
             }
             if (op.Equals(new Operator("&&")))
             {
-                if (lhs.Equals(new BaseType(typeof(Boolean))))
+                if (lhs.Equals(new BaseType(typeof(Boolean), op)))
                 {
-                    return new BaseType(typeof(Boolean));
+                    return new BaseType(typeof(Boolean), op);
                 }
                 return null;
             }
             if (op.Equals(new Operator("||")))
             {
-                if (lhs.Equals(new BaseType(typeof(Boolean))))
+                if (lhs.Equals(new BaseType(typeof(Boolean), op)))
                 {
-                    return new BaseType(typeof(Boolean));
+                    return new BaseType(typeof(Boolean), op);
                 }
                 return null;
             }
             // op is one of < > + - * / %
-            if (lhs.Equals(new BaseType(typeof(Int32))))
+            if (lhs.Equals(new BaseType(typeof(Int32), op)))
             {
-                return new BaseType(typeof(Int32));
+                return new BaseType(typeof(Int32), op);
             }
             return null;
         }
@@ -673,7 +701,7 @@ namespace cgen2014minijava
         private void bindNames(NewArray node)
         {
             bindNames(node.arrayType);
-            node.type = new ArrayType();
+            node.type = new ArrayType(node);
             ((ArrayType)node.type).baseType = node.arrayType;
         }
         private void bindNames(ObjectMemberReference node)
@@ -703,7 +731,7 @@ namespace cgen2014minijava
             {
                 throw new SemanticError(node, "Array reference must be applied to an array");
             }
-            if (!node.index.type.Equals(new BaseType(typeof(Int32))))
+            if (!node.index.type.Equals(new BaseType(typeof(Int32), node.index)))
             {
                 throw new SemanticError(node.index, "Array reference index must be an int");
             }
@@ -715,7 +743,7 @@ namespace cgen2014minijava
             {
                 throw new Exception("this shouldn't happen: AST parse program not a prog");
             }
-            ProgramNode ret = new ProgramNode();
+            ProgramNode ret = new ProgramNode(node);
             ret.mainClass = parseMainClass(node.children[0]);
             ret.classes.Add(ret.mainClass);
             parseClassDecls(ret, node.children[1]);
@@ -727,10 +755,10 @@ namespace cgen2014minijava
             {
                 throw new Exception("this shouldn't happen: AST parse main class not main class");
             }
-            ClassNode ret = new ClassNode();
+            ClassNode ret = new ClassNode(node);
             ret.name = ((Identifier)node.children[1].token).value;
             classTable.Add(ret.name, ret);
-            MethodNode mainMethod = new MethodNode();
+            MethodNode mainMethod = new MethodNode(node);
             mainMethod.statements = parseStatements(node.children[7]);
             ret.methods.Add(mainMethod);
             return ret;
@@ -741,7 +769,7 @@ namespace cgen2014minijava
             {
                 throw new Exception("this shouldn't happen: AST parse class decl not a class decl");
             }
-            ClassNode ret = new ClassNode();
+            ClassNode ret = new ClassNode(node);
             ret.name = ((Identifier)node.children[1].token).value;
             classTable.Add(ret.name, ret);
             ret.inherits = parseInheritance(ret, node.children[2]);
@@ -794,7 +822,7 @@ namespace cgen2014minijava
             {
                 throw new Exception("this shouldn't happen: AST parse method children != 9");
             }
-            MethodNode ret = new MethodNode();
+            MethodNode ret = new MethodNode(node);
             ret.type = parseType(node.children[1]);
             ret.name = ((Identifier)node.children[2].token).value;
             parseFormals(ret, node.children[4]);
@@ -803,7 +831,7 @@ namespace cgen2014minijava
         }
         private BlockStatementNode parseStatements(SyntaxNode node)
         {
-            BlockStatementNode ret = new BlockStatementNode();
+            BlockStatementNode ret = new BlockStatementNode(node.token);
             parseStatements(ret, node);
             return ret;
         }
@@ -845,15 +873,15 @@ namespace cgen2014minijava
             {
                 throw new Exception("this shouldn't happen: AST parse local variable not variable decl");
             }
-            VariableNode var = new VariableNode();
+            VariableNode var = new VariableNode(node);
             var.type = parseType(node.children[0]);
             var.name = ((Identifier)node.children[1].token).value;
             to.locals.Add(var);
         }
         private LocalOrMemberReference parseLocalOrMemberVariableRef(SyntaxNode node)
         {
-            LocalOrMemberReference ret = new LocalOrMemberReference();
-            ret.var = new UnboundVariableName(((Identifier)node.token).value);
+            LocalOrMemberReference ret = new LocalOrMemberReference(node);
+            ret.var = new UnboundVariableName(((Identifier)node.token).value, node);
             return ret;
         }
         private LValue parseLValue(SyntaxNode node)
@@ -880,21 +908,21 @@ namespace cgen2014minijava
         {
             if (node.children[1].token.Equals(new Keyword("length")))
             {
-                ArrayLengthRead ret = new ArrayLengthRead();
+                ArrayLengthRead ret = new ArrayLengthRead(node);
                 ret.obj = parseExpression(node.children[0]);
                 return ret;
             }
             else
             {
-                ObjectMemberReference ret = new ObjectMemberReference();
+                ObjectMemberReference ret = new ObjectMemberReference(node);
                 ret.obj = parseExpression(node.children[0]);
-                ret.member = new UnboundVariableName(((Identifier)node.children[1].token).value);
+                ret.member = new UnboundVariableName(((Identifier)node.children[1].token).value, node.children[1]);
                 return ret;
             }
         }
         private ArrayReference parseArrayReference(SyntaxNode node)
         {
-            ArrayReference ret = new ArrayReference();
+            ArrayReference ret = new ArrayReference(node);
             ret.array = parseLValue(node.children[0]);
             ret.index = parseExpression(node.children[1]);
             return ret;
@@ -931,15 +959,15 @@ namespace cgen2014minijava
             }
             if (node.token.Equals(new Keyword("this")))
             {
-                return new ThisNode();
+                return new ThisNode(node);
             }
             if (node.token is IntLiteral)
             {
-                return new IntConstant(((IntLiteral)node.token).value);
+                return new IntConstant(((IntLiteral)node.token).value, node);
             }
             if (node.token is BoolLiteral)
             {
-                return new BoolConstant(((BoolLiteral)node.token).value);
+                return new BoolConstant(((BoolLiteral)node.token).value, node);
             }
             if (node.token is Identifier)
             {
@@ -965,21 +993,21 @@ namespace cgen2014minijava
         }
         private NewSingular parseNewSingular(SyntaxNode node)
         {
-            NewSingular ret = new NewSingular();
-            ClassType t = new ClassType(new UnboundClassType(((Identifier)node.children[0].token).value));
+            NewSingular ret = new NewSingular(node);
+            ClassType t = new ClassType(new UnboundClassType(((Identifier)node.children[0].token).value, node.children[0]), node);
             ret.newType = t;
             return ret;
         }
         private NewArray parseNewArray(SyntaxNode node)
         {
-            NewArray ret = new NewArray();
+            NewArray ret = new NewArray(node);
             ret.length = parseExpression(node.children[1]);
             ret.arrayType = parseBaseType(node.children[0]);
             return ret;
         }
         private BinaryOperatorCall parseBinaryOperator(SyntaxNode node)
         {
-            BinaryOperatorCall ret = new BinaryOperatorCall();
+            BinaryOperatorCall ret = new BinaryOperatorCall(node);
             ret.lhs = parseExpression(node.children[0]);
             ret.rhs = parseExpression(node.children[1]);
             ret.op = (Operator)node.token;
@@ -987,7 +1015,7 @@ namespace cgen2014minijava
         }
         private UnaryOperatorCall parseUnaryOperator(SyntaxNode node)
         {
-            UnaryOperatorCall ret = new UnaryOperatorCall();
+            UnaryOperatorCall ret = new UnaryOperatorCall(node);
             ret.lhs = parseExpression(node.children[0]);
             ret.op = (Operator)node.token;
             return ret;
@@ -1002,7 +1030,7 @@ namespace cgen2014minijava
             {
                 throw new Exception("this shouldn't happen: AST parse method call children == 0");
             }
-            FunctionCall ret = new FunctionCall();
+            FunctionCall ret = new FunctionCall(node);
             ret.f = parseObjectMethodReference(node.children[0]);
             for (int i = 1; i < node.children.Count; i++)
             {
@@ -1012,13 +1040,13 @@ namespace cgen2014minijava
         }
         private ObjectMethodReference parseObjectMethodReference(SyntaxNode node)
         {
-            ObjectMethodReference ret = new ObjectMethodReference();
+            ObjectMethodReference ret = new ObjectMethodReference(node);
             if (!node.token.Equals(new Keyword(".")))
             {
-                if (node.token is Identifier || node.token.Equals(new Keyword("this")))
+                if (node.token is Identifier)
                 {
-                    ret.obj = new ThisNode();
-                    ret.method = new UnboundMethodName(((Identifier)node.token).value);
+                    ret.obj = new ThisNode(node);
+                    ret.method = new UnboundMethodName(((Identifier)node.token).value, node);
                     return ret;
                 }
                 else
@@ -1027,44 +1055,44 @@ namespace cgen2014minijava
                 }
             }
             ret.obj = parseExpression(node.children[0]);
-            ret.method = new UnboundMethodName(((Identifier)node.children[1].token).value);
+            ret.method = new UnboundMethodName(((Identifier)node.children[1].token).value, node.children[1]);
             return ret;
         }
         private AssertNode parseAssert(SyntaxNode node)
         {
-            AssertNode ret = new AssertNode();
+            AssertNode ret = new AssertNode(node);
             ret.value = parseExpression(node.children[2]);
             return ret;
         }
         private WhileNode parseWhile(SyntaxNode node)
         {
-            WhileNode ret = new WhileNode();
+            WhileNode ret = new WhileNode(node);
             ret.condition = parseExpression(node.children[2]);
             ret.doThis = parseStatement(node.children[4]);
             return ret;
         }
         private PrintNode parsePrint(SyntaxNode node)
         {
-            PrintNode ret = new PrintNode();
+            PrintNode ret = new PrintNode(node);
             ret.value = parseExpression(node.children[2]);
             return ret;
         }
         private ReturnNode parseReturn(SyntaxNode node)
         {
-            ReturnNode ret = new ReturnNode();
+            ReturnNode ret = new ReturnNode(node);
             ret.value = parseExpression(node.children[1]);
             return ret;
         }
         private AssignmentNode parseAssignment(SyntaxNode node)
         {
-            AssignmentNode ret = new AssignmentNode();
+            AssignmentNode ret = new AssignmentNode(node);
             ret.target = parseLValue(node.children[0]);
             ret.value = parseExpression(node.children[1].children[1]);
             return ret;
         }
         private IfNode parseIf(SyntaxNode node)
         {
-            IfNode ret = new IfNode();
+            IfNode ret = new IfNode(node);
             ret.condition = parseExpression(node.children[2]);
             ret.thenNode = parseStatement(node.children[4]);
             if (node.children.Count == 6)
@@ -1127,7 +1155,7 @@ namespace cgen2014minijava
             {
                 return;
             }
-            VariableNode newNode = new VariableNode();
+            VariableNode newNode = new VariableNode(node);
             newNode.type = parseType(node.children[0].children[0]);
             newNode.name = ((Identifier)node.children[0].children[1].token).value;
             to.arguments.Add(newNode);
@@ -1143,7 +1171,7 @@ namespace cgen2014minijava
             {
                 return;
             }
-            VariableNode newNode = new VariableNode();
+            VariableNode newNode = new VariableNode(node);
             newNode.type = parseType(node.children[1].children[0]);
             newNode.name = ((Identifier)node.children[1].children[1].token).value;
             to.arguments.Add(newNode);
@@ -1155,7 +1183,7 @@ namespace cgen2014minijava
             {
                 throw new Exception("this shouldn't happen: AST parse variable decl children != 3");
             }
-            VariableNode ret = new VariableNode();
+            VariableNode ret = new VariableNode(node);
             ret.type = parseType(node.children[0]);
             ret.name = ((Identifier)node.children[1].token).value;
             return ret;
@@ -1172,7 +1200,7 @@ namespace cgen2014minijava
             }
             if (node.children[1].children.Count != 0)
             {
-                ArrayType ret = new ArrayType();
+                ArrayType ret = new ArrayType(node);
                 ret.baseType = parseBaseType(node.children[0]);
                 return ret;
             }
@@ -1186,19 +1214,19 @@ namespace cgen2014minijava
             }
             if (node.token.Equals(new Keyword("int")))
             {
-                return new BaseType(typeof(Int32));
+                return new BaseType(typeof(Int32), node);
             }
             if (node.token.Equals(new Keyword("bool")))
             {
-                return new BaseType(typeof(Boolean));
+                return new BaseType(typeof(Boolean), node);
             }
             if (node.token.Equals(new Keyword("void")))
             {
-                return new BaseType(null);
+                return new BaseType(null, node);
             }
             if (node.token is Identifier)
             {
-                ClassType ret = new ClassType(new UnboundClassType(((Identifier)node.token).value));
+                ClassType ret = new ClassType(new UnboundClassType(((Identifier)node.token).value, node), node);
                 return ret;
             }
             throw new Exception("this shouldn't happen: AST parse base type unknown type");
@@ -1213,7 +1241,7 @@ namespace cgen2014minijava
             {
                 return null;
             }
-            return new UnboundClassType(((Identifier)node.children[1].token).value);
+            return new UnboundClassType(((Identifier)node.children[1].token).value, node.children[1]);
         }
         private void parseClassDecls(ProgramNode to, SyntaxNode node)
         {

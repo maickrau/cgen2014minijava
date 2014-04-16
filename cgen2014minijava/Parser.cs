@@ -66,10 +66,10 @@ namespace cgen2014minijava
             this.root = root;
         }
     }
-    public class SyntaxNode
+    public class SyntaxNode : Positionable
     {
-        public int line;
-        public int position;
+        public int line { get; set; }
+        public int position { get; set; }
         public Token token;
         public SyntaxNode parent;
         public List<SyntaxNode> children;
@@ -89,6 +89,8 @@ namespace cgen2014minijava
         {
             this.token = token;
             children = new List<SyntaxNode>();
+            line = token.line;
+            position = token.position;
         }
     }
     public class Parser

@@ -6,6 +6,11 @@ using System.Threading.Tasks;
 
 namespace cgen2014minijava
 {
+    public interface Positionable
+    {
+        int position { get; set; }
+        int line { get; set; }
+    }
     public class ScannerException : Exception
     {
         public ScannerException(String str) : base(str) { }
@@ -21,7 +26,7 @@ namespace cgen2014minijava
             return sb.ToString();
         }
     }
-    public abstract class Token
+    public abstract class Token : Positionable
     {
         public static Token create(Type type, String str)
         {
@@ -68,8 +73,8 @@ namespace cgen2014minijava
         {
             return false;
         }
-        public int line;
-        public int position;
+        public int position { get; set; }
+        public int line { get; set; }
     }
     public class Operator : Token
     {
