@@ -287,5 +287,54 @@ namespace cgen2014minijavaTest
             ProgramNode t = p.parse(g.parse(s));
             Assert.IsInstanceOfType(((AssertNode)t.mainClass.methods[0].statements.statements[0]).value, typeof(UnaryOperatorCall));
         }
+        [TestMethod]
+        public void selectsMemberOrLocalCorrectly()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    int[] a;
+                    a = new int[10];
+                    a[3] = 1;
+                  }
+                }
+                class second {
+                  int a;
+                  public int f() {
+                    a = 1;
+                  }
+                }
+                ";
+            ProgramNode t = p.parse(g.parse(s));
+            Assert.IsFalse(((LocalOrMemberReference)((AssignmentNode)t.mainClass.methods[0].statements.statements[0]).target).isMember);
+            Assert.IsTrue(((LocalOrMemberReference)((AssignmentNode)t.classes[1].methods[0].statements.statements[0]).target).isMember);
+        }
+        [TestMethod]
+        public void localsShadowMembers()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                  }
+                }
+                class second {
+                  int a;
+                  public int f() {
+                    int a;
+                    a = 1;
+                  }
+                  public int g() {
+                    a = 1;
+                  }
+                }
+                ";
+            ProgramNode t = p.parse(g.parse(s));
+            Assert.IsFalse(((LocalOrMemberReference)((AssignmentNode)t.classes[1].methods[0].statements.statements[0]).target).isMember);
+            Assert.IsTrue(((LocalOrMemberReference)((AssignmentNode)t.classes[1].methods[1].statements.statements[0]).target).isMember);
+        }
     }
 }

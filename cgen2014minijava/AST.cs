@@ -18,7 +18,7 @@ namespace cgen2014minijava
         public int line { get; set; }
         public override bool Equals(Object o)
         {
-            return false;
+            return ReferenceEquals(this, o);
         }
         public override int GetHashCode()
         {
@@ -253,7 +253,7 @@ namespace cgen2014minijava
     public class NewSingular : NewNode
     {
         public NewSingular(Positionable t) : base(t) { }
-        public TypeNode newType;
+        public ClassType newType;
     }
     public class NewArray : NewNode
     {
@@ -278,7 +278,8 @@ namespace cgen2014minijava
     }
     public class LocalOrMemberReference : LValue
     {
-        public LocalOrMemberReference(Positionable t) : base(t) { }
+        public LocalOrMemberReference(Positionable t) : base(t) { isMember = false; }
+        public bool isMember;
         public VariableNode var;
     }
     public class ArrayReference : LValue
@@ -289,11 +290,13 @@ namespace cgen2014minijava
     }
     abstract public class TypeNode : ASTNode
     {
+        public abstract String Type { get; }
         public TypeNode(Positionable t) : base(t) { }
         public TypeNode(ASTNode t) : base(t) { }
     }
     public class ArrayType : TypeNode
     {
+        public override String Type { get { return baseType.Type + "[]";  } }
         public ArrayType(Positionable t) : base(t) { }
         public override bool Equals(object o)
         {
@@ -311,6 +314,7 @@ namespace cgen2014minijava
     }
     public class BaseType : TypeNode
     {
+        public override String Type { get { if (type != null) return type.ToString(); else return "void"; } }
         public BaseType(Type type, Positionable t) : base(t)
         {
             this.type = type;
@@ -331,6 +335,7 @@ namespace cgen2014minijava
     }
     public class ClassType : TypeNode
     {
+        public override String Type { get { return type.name; } }
         public ClassType(ClassNode type, Positionable t) : base(t)
         {
             this.type = type;
@@ -355,6 +360,132 @@ namespace cgen2014minijava
         {
         }
     }
+    public class ExpressionVisitor
+    {
+        public static void visit(ProgramNode node, Action<ExpressionNode> f, bool postOrder)
+        {
+            StatementVisitor.visit(node, statementVisitor(f, postOrder), postOrder);
+        }
+        private static void visit(ExpressionNode n, Action<ExpressionNode> f, bool postOrder)
+        {
+            if (!postOrder)
+            {
+                f.DynamicInvoke(n);
+            }
+            if (n is ObjectMethodReference)
+            {
+                visit(((ObjectMethodReference)n).obj, f, postOrder);
+            }
+            else if (n is FunctionCall)
+            {
+                visit(((FunctionCall)n).f, f, postOrder);
+                foreach (ExpressionNode e in ((FunctionCall)n).args)
+                {
+                    visit(e, f, postOrder);
+                }
+            }
+            else if (n is UnaryOperatorCall)
+            {
+                visit(((UnaryOperatorCall)n).lhs, f, postOrder);
+            }
+            else if (n is BinaryOperatorCall)
+            {
+                visit(((BinaryOperatorCall)n).lhs, f, postOrder);
+                visit(((BinaryOperatorCall)n).rhs, f, postOrder);
+            }
+            else if (n is NewArray)
+            {
+                visit(((NewArray)n).length, f, postOrder);
+            }
+            else if (n is ObjectMemberReference)
+            {
+                visit(((ObjectMemberReference)n).obj, f, postOrder);
+            }
+            else if (n is ArrayReference)
+            {
+                visit(((ArrayReference)n).array, f, postOrder);
+                visit(((ArrayReference)n).index, f, postOrder);
+            }
+            if (postOrder)
+            {
+                f.DynamicInvoke(n);
+            }
+        }
+        private static Action<StatementNode> statementVisitor(Action<ExpressionNode> f, bool postOrder)
+        {
+            return delegate(StatementNode node)
+            {
+                if (node is WhileNode)
+                {
+                    visit(((WhileNode)node).condition, f, postOrder);
+                }
+                else if (node is IfNode)
+                {
+                    visit(((IfNode)node).condition, f, postOrder);
+                }
+                else if (node is AssignmentNode)
+                {
+                    visit(((AssignmentNode)node).target, f, postOrder);
+                    visit(((AssignmentNode)node).value, f, postOrder);
+                }
+                else if (node is ReturnNode)
+                {
+                    visit(((ReturnNode)node).value, f, postOrder);
+                }
+                else if (node is AssertNode)
+                {
+                    visit(((AssertNode)node).value, f, postOrder);
+                }
+                else if (node is PrintNode)
+                {
+                    visit(((PrintNode)node).value, f, postOrder);
+                }
+            };
+        }
+    }
+    public class StatementVisitor
+    {
+        public static void visit(ProgramNode node, Action<StatementNode> f, bool postOrder)
+        {
+            foreach (ClassNode c in node.classes)
+            {
+                foreach (MethodNode m in c.methods)
+                {
+                    visit(m.statements, f, postOrder);
+                }
+            }
+        }
+        private static void visit(StatementNode node, Action<StatementNode> f, bool postOrder)
+        {
+            if (!postOrder)
+            {
+                f.DynamicInvoke(node);
+            }
+            if (node is BlockStatementNode)
+            {
+                foreach (StatementNode s in ((BlockStatementNode)node).statements)
+                {
+                    visit(s, f, postOrder);
+                }
+            }
+            else if (node is IfNode)
+            {
+                visit(((IfNode)node).thenNode, f, postOrder);
+                if (((IfNode)node).elseNode != null)
+                {
+                    visit(((IfNode)node).elseNode, f, postOrder);
+                }
+            }
+            else if (node is WhileNode)
+            {
+                visit(((WhileNode)node).doThis, f, postOrder);
+            }
+            if (postOrder)
+            {
+                f.DynamicInvoke(node);
+            }
+        }
+    }
 
     public class ASTParser
     {
@@ -363,6 +494,7 @@ namespace cgen2014minijava
         }
         private Dictionary<String, ClassNode> classTable;
         private Stack<Dictionary<String, VariableNode>> variableTable;
+        private HashSet<String> locals; //for validating local variable name uniqueness
         private ClassNode currentClass;
         private MethodNode currentMethod;
         public ProgramNode parse(SyntaxTree tree)
@@ -372,15 +504,114 @@ namespace cgen2014minijava
             ProgramNode unbound = parseProgram(tree.root);
             bindClassNames(unbound); //bind method return types to classes
             bindNames(unbound); //bind all other names
+            validateInheritance(unbound); //sort the classes so derived classes are after base classes
+            validateUniqueLocals(unbound); //local variable names must be unique (may shadow member variables)
+            StatementVisitor.visit(unbound, delegate(StatementNode s) { if (s is ExpressionNode && !(s is FunctionCall)) throw new SemanticError(s, "Statement expression must be a function call"); }, false);
             return unbound;
         }
-        private ClassNode getClass(String name)
+        private void validateUniqueLocals(ProgramNode prog)
         {
+            foreach (ClassNode c in prog.classes)
+            {
+                foreach (MethodNode m in c.methods)
+                {
+                    validateUniqueLocals(m);
+                }
+            }
+        }
+        private void validateUniqueLocals(MethodNode m)
+        {
+            locals = new HashSet<String>();
+            foreach (VariableNode arg in m.arguments)
+            {
+                if (locals.Contains(arg.name))
+                {
+                    throw new SemanticError(arg, "Local variable already declared");
+                }
+                locals.Add(arg.name);
+            }
+            validateUniqueLocals(m.statements);
+        }
+        private void validateUniqueLocals(BlockStatementNode b)
+        {
+            foreach (VariableNode local in b.locals)
+            {
+                if (locals.Contains(local.name))
+                {
+                    throw new SemanticError(local, "Local variable already declared");
+                }
+                locals.Add(local.name);
+            }
+            foreach(StatementNode s in b.statements)
+            {
+                validateUniqueLocals(s);
+            }
+        }
+        private void validateUniqueLocals(StatementNode s)
+        {
+            if (s == null)
+            {
+                return;
+            }
+            if (s is BlockStatementNode)
+            {
+                validateUniqueLocals((BlockStatementNode)s);
+            }
+            else if (s is IfNode)
+            {
+                validateUniqueLocals(((IfNode)s).thenNode);
+                validateUniqueLocals(((IfNode)s).elseNode);
+            }
+            else if (s is WhileNode)
+            {
+                validateUniqueLocals(((WhileNode)s).doThis);
+            }
+        }
+        private void validateInheritance(ProgramNode prog)
+        {
+            //http://en.wikipedia.org/wiki/Topological_sorting
+            List<ClassNode> sorted = new List<ClassNode>();
+            Queue<ClassNode> eligible = new Queue<ClassNode>(); //base class has been handled
+            List<ClassNode> rest = new List<ClassNode>(); //base class hasn't been handled
+            foreach (ClassNode c in prog.classes)
+            {
+                if (c.inherits == null)
+                {
+                    eligible.Enqueue(c);
+                }
+                else
+                {
+                    rest.Add(c);
+                }
+            }
+            while (eligible.Count > 0)
+            {
+                ClassNode picked = eligible.Dequeue();
+                sorted.Add(picked);
+                var derived = rest.Where(n => n.inherits == picked);
+                foreach (ClassNode n in derived)
+                {
+                    eligible.Enqueue(n);
+                }
+                rest.RemoveAll(n => derived.Contains(n));
+            }
+            if (rest.Count > 0)
+            {
+                throw new SemanticError(prog, "Inheritance cycle (" + String.Join(", ", rest.Select(n => n.name)) + ")");
+            }
+            prog.classes = sorted;
+        }
+        private ClassNode getClass(ASTNode caller, String name)
+        {
+            if (!classTable.Keys.Contains(name))
+            {
+                throw new SemanticError(caller, "Class name not found: \"" + name + "\"");
+            }
             return classTable[name];
         }
         private VariableNode getVariable(String name)
         {
-            for (int i = variableTable.Count-1; i >= 0; i--)
+            for (int i = 0; i < variableTable.Count; i++)
             {
                 if (variableTable.ElementAt(i).Keys.Contains(name))
                 {
@@ -388,6 +619,25 @@ namespace cgen2014minijava
                 }
             }
             throw new Exception("this shouldn't happen: AST get variable name unknown var \"" + name + "\"");
+        }
+        private bool variableIsLocal(String name)
+        {
+            if (variableTable.Count < 2)
+            {
+                throw new Exception("This shouldn't happen: Variable localness check variable table stack size " + variableTable.Count);
+            }
+            for (int i = 0; i < variableTable.Count-1; i++)
+            {
+                if (variableTable.ElementAt(i).Keys.Contains(name))
+                {
+                    return true;
+                }
+            }
+            if (variableTable.ElementAt(variableTable.Count-1).Keys.Contains(name))
+            {
+                return false;
+            }
+            throw new Exception("This shouldn't happen: Variable localness check variable not found");
         }
         private void bindClassNames(ProgramNode node)
         {
@@ -407,7 +657,7 @@ namespace cgen2014minijava
         {
             if (node.type is ClassType)
             {
-                node.type = new ClassType(getClass(((ClassType)node.type).type.name), node);
+                node.type = new ClassType(getClass(node, ((ClassType)node.type).type.name), node);
             }
         }
         private void bindNames(ProgramNode node)
@@ -422,7 +672,11 @@ namespace cgen2014minijava
             currentClass = node;
             if (node.inherits is UnboundClassType)
             {
-                node.inherits = getClass(node.inherits.name);
+                node.inherits = getClass(node.inherits, node.inherits.name);
+            }
+            if (variableTable.Count != 0)
+            {
+                throw new Exception("This shouldn't happen: Variable table stack size is " + variableTable.Count + " when starting to bind names in class");
             }
             variableTable.Push(new Dictionary<String, VariableNode>());
             foreach (VariableNode v in node.members)
@@ -438,6 +692,10 @@ namespace cgen2014minijava
         }
         private void bindNames(MethodNode node)
         {
+            if (variableTable.Count != 1)
+            {
+                throw new Exception("This shouldn't happen: Variable table stack size is " + variableTable.Count + " when starting to bind names in method");
+            }
             currentMethod = node;
             bindNames(node.type);
             variableTable.Push(new Dictionary<String, VariableNode>());
@@ -451,6 +709,10 @@ namespace cgen2014minijava
         }
         private void bindNames(BlockStatementNode node)
         {
+            if (variableTable.Count < 2)
+            {
+                throw new Exception("This shouldn't happen: Variable table stack size is " + variableTable.Count + " when starting to bind names in block statement");
+            }
             variableTable.Push(new Dictionary<String, VariableNode>());
             foreach (VariableNode v in node.locals)
             {
@@ -477,7 +739,7 @@ namespace cgen2014minijava
             {
                 if (((ClassType)node).type is UnboundClassType)
                 {
-                    ((ClassType)node).type = getClass(((ClassType)node).type.name);
+                    ((ClassType)node).type = getClass(node, ((ClassType)node).type.name);
                 }
             }
         }
@@ -548,7 +810,7 @@ namespace cgen2014minijava
             }
             else if (node is ThisNode)
             {
-                node.type = new ClassType(currentClass, node);
+                node.type = new ClassType(getClass(node, currentClass.name), node);
             }
             else if (node is ObjectMethodReference)
             {
@@ -598,7 +860,7 @@ namespace cgen2014minijava
             {
                 throw new SemanticError(node.obj, "Method call must be applied to a class");
             }
-            ClassType objType = new ClassType(getClass(((ClassType)node.obj.type).type.name), node.obj);
+            ClassType objType = new ClassType(getClass(node.obj, ((ClassType)node.obj.type).type.name), node.obj);
             node.obj.type = objType;
             MethodNode n = objType.type.methods.Find(m => m.name == node.method.name);
             if (n == null)
@@ -664,7 +926,7 @@ namespace cgen2014minijava
             }
             if (op.Equals(new Operator("==")))
             {
-                return lhs;
+                return new BaseType(typeof(Boolean), op); ;
             }
             if (!(lhs is BaseType))
             {
@@ -711,7 +973,7 @@ namespace cgen2014minijava
             {
                 throw new SemanticError(node.obj, "Member access can only be done on classes");
             }
-            node.member = getClass(((ClassType)node.obj.type).type.name).members.Find(v => v.name == node.member.name);
+            node.member = getClass(node.obj, ((ClassType)node.obj.type).type.name).members.Find(v => v.name == node.member.name);
             if (node.member == null)
             {
                 throw new SemanticError(node.member, "Member " + node.member.name + " not found in class " + ((ClassType)node.obj.type).type.name);
@@ -721,6 +983,7 @@ namespace cgen2014minijava
         private void bindNames(LocalOrMemberReference node)
         {
             node.var = getVariable(node.var.name);
+            node.isMember = !variableIsLocal(node.var.name);
             node.type = node.var.type;
         }
         private void bindNames(ArrayReference node)
@@ -759,6 +1022,8 @@ namespace cgen2014minijava
             ret.name = ((Identifier)node.children[1].token).value;
             classTable.Add(ret.name, ret);
             MethodNode mainMethod = new MethodNode(node);
+            mainMethod.type = new BaseType(null, mainMethod);
+            mainMethod.name = "main";
             mainMethod.statements = parseStatements(node.children[7]);
             ret.methods.Add(mainMethod);
             return ret;
