@@ -53,6 +53,7 @@
     <Compile Include="ASTTest.cs" />
     <Compile Include="MiniJavaGrammarTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="CompilerTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cgen2014minijava\cgen2014minijava.csproj">
