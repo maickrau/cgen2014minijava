@@ -12,13 +12,29 @@ namespace cgen2014minijava
     {
         public ClassBuilder(CodeGenerator holder, TypeBuilder builder, ClassNode node)
         {
+            inherits = null;
             classnode = node;
             typeholder = holder;
             this.builder = builder;
             vars = new Dictionary<VariableNode, FieldBuilder>();
             methods = new Dictionary<MethodNode, MethodBuilder>();
-            constructor = builder.DefineDefaultConstructor(MethodAttributes.Public);
+            constructor = builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Any, new Type[]{});
+            var a = constructor.GetILGenerator();
+            a.Emit(System.Reflection.Emit.OpCodes.Ret);
         }
+        public void bindMethods()
+        {
+            foreach (MethodNode n in classnode.methods)
+            {
+                methods.Add(n, builder.DefineMethod(n.name, System.Reflection.MethodAttributes.Public, typeholder.getType(n.type.Type), n.arguments.Select(a => typeholder.getType(a.type.Type)).ToArray()));
+            }
+        }
+        public void bindMainMethod()
+        {
+            MethodNode met = classnode.methods[0];
+            methods.Add(met, builder.DefineMethod(met.name, System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static, typeholder.getType(met.type.Type), met.arguments.Select(a => typeholder.getType(a.type.Type)).ToArray()));
+        }
+        public ClassBuilder inherits;
         public ClassNode classnode;
         public ConstructorBuilder constructor;
         public CodeGenerator typeholder;
@@ -31,18 +47,15 @@ namespace cgen2014minijava
             }
             return vars[var];
         }
-        public MethodBuilder getMethod(MethodNode met, bool isStatic=false)
+        public MethodBuilder getMethod(MethodNode met)
         {
             if (!methods.Keys.Contains(met))
             {
-                if (isStatic)
+                if (inherits != null)
                 {
-                    methods.Add(met, builder.DefineMethod(met.name, System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static, typeholder.getType(met.type.Type), met.arguments.Select(a => typeholder.getType(a.type.Type)).ToArray()));
+                    return inherits.getMethod(met);
                 }
-                else
-                {
-                    methods.Add(met, builder.DefineMethod(met.name, System.Reflection.MethodAttributes.Public, typeholder.getType(met.type.Type), met.arguments.Select(a => typeholder.getType(a.type.Type)).ToArray()));
-                }
+                throw new Exception("This shouldn't happen: code generation method not found (class " + classnode.name + ", method " + met.name + ")");
             }
             return methods[met];
         }
@@ -57,7 +70,6 @@ namespace cgen2014minijava
     {
         private Dictionary<ClassNode, ClassBuilder> classes;
         private Dictionary<String, Type> types;
-        private ModuleBuilder mb;
         private ClassBuilder currentClass;
         private bool currentClassIsMain;
         private MethodBuilder currentMethod;
@@ -100,6 +112,21 @@ namespace cgen2014minijava
             {
                 if (n != prog.mainClass)
                 {
+                    if (n.inherits != null)
+                    {
+                        classes[n].inherits = classes[n.inherits];
+                    }
+                    classes[n].bindMethods();
+                }
+                else
+                {
+                    classes[n].bindMainMethod();
+                }
+            }
+            foreach (ClassNode n in prog.classes)
+            {
+                if (n != prog.mainClass)
+                {
                     generateClass(module, n);
                 }
                 else
@@ -137,7 +164,7 @@ namespace cgen2014minijava
             {
                 throw new Exception("Main class methods.count != 1");
             }
-            generateMethod(currentClass.getMethod(c.methods[0], true), c.methods[0]);
+            generateMethod(currentClass.getMethod(c.methods[0]), c.methods[0]);
         }
         private void generateClass(ModuleBuilder mb, ClassNode c)
         {

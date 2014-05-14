@@ -357,5 +357,29 @@ class Arraystuff {
             Assert.AreEqual("6", output[3]);
             Assert.AreEqual("7", output[4]);
         }
+        [TestMethod]
+        public void inheritanceWorks()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    System.out.println (new Fac2 ().ComputeFac (10));
+  }
+}
+class Fac2 extends Fac { }
+class Fac {
+  public int ComputeFac (int num) {
+    assert (num > -1);
+    int num_aux;
+    if (num == 0)
+      num_aux = 1;
+    else 
+      num_aux = num * this.ComputeFac (num-1);
+    return num_aux;
+  }
+}";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("3628800", output[0]);
+        }
     }
 }

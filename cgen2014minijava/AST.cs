@@ -509,6 +509,19 @@ namespace cgen2014minijava
             StatementVisitor.visit(unbound, delegate(StatementNode s) { if (s is ExpressionNode && !(s is FunctionCall)) throw new SemanticError(s, "Statement expression must be a function call"); }, false);
             return unbound;
         }
+        private MethodNode findMethod(ClassNode node, String methodName, ASTNode calledFrom)
+        {
+            MethodNode found = node.methods.Find(x => x.name == methodName);
+            if (found != null)
+            {
+                return found;
+            }
+            if (node.inherits != null)
+            {
+                return findMethod(node.inherits, methodName, calledFrom);
+            }
+            throw new SemanticError(calledFrom, "Method not found");
+        }
         private void validateUniqueLocals(ProgramNode prog)
         {
             foreach (ClassNode c in prog.classes)
@@ -648,6 +661,10 @@ namespace cgen2014minijava
         }
         private void bindClassNames(ClassNode node)
         {
+            if (node.inherits != null)
+            {
+                node.inherits = getClass(node.inherits, node.inherits.name);
+            }
             foreach (MethodNode m in node.methods)
             {
                 bindClassNames(m);
@@ -670,10 +687,6 @@ namespace cgen2014minijava
         private void bindNames(ClassNode node)
         {
             currentClass = node;
-            if (node.inherits is UnboundClassType)
-            {
-                node.inherits = getClass(node.inherits, node.inherits.name);
-            }
             if (variableTable.Count != 0)
             {
                 throw new Exception("This shouldn't happen: Variable table stack size is " + variableTable.Count + " when starting to bind names in class");
@@ -862,11 +875,7 @@ namespace cgen2014minijava
             }
             ClassType objType = new ClassType(getClass(node.obj, ((ClassType)node.obj.type).type.name), node.obj);
             node.obj.type = objType;
-            MethodNode n = objType.type.methods.Find(m => m.name == node.method.name);
-            if (n == null)
-            {
-                throw new SemanticError(node.method, "Method not found");
-            }
+            MethodNode n = findMethod(objType.type, node.method.name, node);
             node.method = n;
             node.type = node.method.type;
         }
