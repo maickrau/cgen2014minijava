@@ -331,5 +331,31 @@ public void setA(int num) {
             Assert.AreEqual("5", output[1]);
             Assert.AreEqual("15", output[2]);
         }
+        [TestMethod]
+        public void whileWorks()
+        {
+            String s = @"
+class Arraystuff {
+  public static void main () {
+    int a;
+    a = 3;
+    while (a > 5) {
+        System.out.println(0);
+    }
+    while (a < 8) {
+        System.out.println(a);
+        a = a+1;
+    }
+  }
+}
+";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual(5, output.Count);
+            Assert.AreEqual("3", output[0]);
+            Assert.AreEqual("4", output[1]);
+            Assert.AreEqual("5", output[2]);
+            Assert.AreEqual("6", output[3]);
+            Assert.AreEqual("7", output[4]);
+        }
     }
 }
