@@ -381,5 +381,98 @@ class Fac {
             List<String> output = compileAndRun(s);
             Assert.AreEqual("3628800", output[0]);
         }
+        [TestMethod]
+        public void functionOverridingWorks()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    System.out.println (new Fac ().getNum ());
+    System.out.println (new Fac2 ().getNum ());
+  }
+}
+class Fac2 extends Fac {
+public int getNum() {
+return 10;
+}
+}
+class Fac {
+  public int getNum () {
+    return 5;
+  }
+}";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("5", output[0]);
+            Assert.AreEqual("10", output[1]);
+        }
+        [TestMethod]
+        public void localsShadowMembers()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    Fac b;
+    b = new Fac();
+    System.out.println (b.getMember());
+    System.out.println (b.getLocal());
+    b.setMember(10);
+    System.out.println (b.getMember());
+    System.out.println (b.getLocal());
+    b.setLocal(5);
+    System.out.println (b.getMember());
+    System.out.println (b.getLocal());
+  }
+}
+class Fac {
+int a;
+public int getMember() {
+return a;
+}
+public int getLocal() {
+int a;
+return a;
+}
+public void setMember(int a) {
+this.a = a;
+}
+public void setLocal(int num) {
+int a;
+a = num;
+}
+}";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("0", output[0]);
+            Assert.AreEqual("0", output[1]);
+            Assert.AreEqual("10", output[2]);
+            Assert.AreEqual("0", output[3]);
+            Assert.AreEqual("10", output[4]);
+            Assert.AreEqual("0", output[5]);
+        }
+        [TestMethod]
+        public void voidFunctionCallsWork()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    Fac a;
+    a.print5();
+    a.print10();
+    System.out.println(1+1); //a.print10() shouldn't leave anything on stack
+  }
+}
+class Fac {
+public int print10() {
+System.out.println(10);
+return 1;
+}
+public void print5() {
+System.out.println(5);
+}
+}";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("5", output[0]);
+            Assert.AreEqual("10", output[1]);
+            Assert.AreEqual("2", output[2]);
+        }
     }
 }
