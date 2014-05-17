@@ -43,6 +43,10 @@ namespace cgen2014minijava
             {
                 tree = g.parse(s);
             }
+            catch (ScannerException e)
+            {
+                System.Console.WriteLine("Errors parsing the program: " + e);
+            }
             catch (ParserException e)
             {
                 System.Console.WriteLine("Errors parsing the program: " + e);

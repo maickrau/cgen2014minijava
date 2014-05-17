@@ -471,5 +471,76 @@ namespace cgen2014minijavaTest
                 //success
             }
         }
+        [TestMethod]
+        public void variableNamesMustBind()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    b = 5;
+                  }
+                }
+                ";
+            try
+            {
+                ProgramNode t = p.parse(g.parse(s));
+                Assert.Fail();
+            }
+            catch (SemanticError e)
+            {
+                //success
+            }
+        }
+        [TestMethod]
+        public void methodNamesMustBind()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    second a;
+                    a = new second();
+                    System.out.println(a.f());
+                  }
+                }
+                class second { }
+                ";
+            try
+            {
+                ProgramNode t = p.parse(g.parse(s));
+                Assert.Fail();
+            }
+            catch (SemanticError e)
+            {
+                //success
+            }
+        }
+        [TestMethod]
+        public void classNamesMustBind()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    second a;
+                    a = new second();
+                    System.out.println(a.f());
+                  }
+                }
+                ";
+            try
+            {
+                ProgramNode t = p.parse(g.parse(s));
+                Assert.Fail();
+            }
+            catch (SemanticError e)
+            {
+                //success
+            }
+        }
     }
 }

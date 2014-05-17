@@ -587,7 +587,6 @@ namespace cgen2014minijava
             {
                 return findMethod(node.inherits, methodName, calledFrom);
             }
-            addError(calledFrom, "Method not found");
             return null;
         }
         private void validateUniqueLocals(ProgramNode prog)
@@ -686,7 +685,7 @@ namespace cgen2014minijava
         {
             if (!classTable.Keys.Contains(name))
             {
-                addError(caller, "Class name not found: \"" + name + "\"");
+                return null;
             }
             return classTable[name];
         }
@@ -699,7 +698,7 @@ namespace cgen2014minijava
                     return variableTable.ElementAt(i)[name];
                 }
             }
-            throw new Exception("this shouldn't happen: AST get variable name unknown var \"" + name + "\"");
+            return null;
         }
         private bool variableIsLocal(String name)
         {
@@ -731,7 +730,12 @@ namespace cgen2014minijava
         {
             if (node.inherits != null)
             {
-                node.inherits = getClass(node.inherits, node.inherits.name);
+                ClassNode inherits = getClass(node.inherits, node.inherits.name);
+                if (inherits == null)
+                {
+                    addError(node.inherits, "Class name not found: \"" + node.inherits.name + "\"");
+                }
+                node.inherits = inherits;
             }
             foreach (MethodNode m in node.methods)
             {
@@ -742,7 +746,13 @@ namespace cgen2014minijava
         {
             if (node.type is ClassType)
             {
-                node.type = new ClassType(getClass(node, ((ClassType)node.type).type.name), node);
+                ClassNode type = getClass(node, ((ClassType)node.type).type.name);
+                if (type == null)
+                {
+                    addError(node.type, "Class not found");
+                    return;
+                }
+                node.type = new ClassType(type, node);
             }
         }
         private void bindNames(ProgramNode node)
@@ -820,7 +830,13 @@ namespace cgen2014minijava
             {
                 if (((ClassType)node).type is UnboundClassType)
                 {
-                    ((ClassType)node).type = getClass(node, ((ClassType)node).type.name);
+                    ClassNode type = getClass(node, ((ClassType)node).type.name);
+                    if (type == null)
+                    {
+                        addError(((ClassType)node).type, "Class not found");
+                        return;
+                    }
+                    ((ClassType)node).type = type;
                 }
             }
         }
@@ -891,7 +907,12 @@ namespace cgen2014minijava
             }
             else if (node is ThisNode)
             {
-                node.type = new ClassType(getClass(node, currentClass.name), node);
+                ClassNode type = getClass(node, currentClass.name);
+                if (type == null)
+                {
+                    addError(currentClass, "Class not found");
+                }
+                node.type = new ClassType(type, node);
             }
             else if (node is ObjectMethodReference)
             {
@@ -941,9 +962,20 @@ namespace cgen2014minijava
             {
                 addError(node.obj, "Method call must be applied to a class");
             }
-            ClassType objType = new ClassType(getClass(node.obj, ((ClassType)node.obj.type).type.name), node.obj);
+            ClassNode type = getClass(node.obj, ((ClassType)node.obj.type).type.name);
+            if (type == null)
+            {
+                addError(((ClassType)node.obj.type).type, "Class not found");
+                return;
+            }
+            ClassType objType = new ClassType(type, node.obj);
             node.obj.type = objType;
             MethodNode n = findMethod(objType.type, node.method.name, node);
+            if (n == null)
+            {
+                addError(node.method, "Method not found");
+                return;
+            }
             node.method = n;
             node.type = node.method.type;
         }
@@ -1060,6 +1092,11 @@ namespace cgen2014minijava
         private void bindNames(LocalOrMemberReference node)
         {
             node.var = getVariable(node.var.name);
+            if (node.var == null)
+            {
+                addError(node, "Variable not found");
+                return;
+            }
             node.isMember = !variableIsLocal(node.var.name);
             node.type = node.var.type;
         }
