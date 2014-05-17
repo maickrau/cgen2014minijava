@@ -414,6 +414,35 @@ namespace cgen2014minijavaTest
             //didn't throw an error
         }
         [TestMethod]
+        public void superclassMayNotBeAssignedToSubclass()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    third a;
+                    a = new second();
+                    a.f(5);
+                  }
+                }
+                class third extends second {}
+                class second {
+                  public int f(int a) {
+                  }
+                }
+                ";
+            try
+            {
+                ProgramNode t = p.parse(g.parse(s));
+                Assert.Fail();
+            }
+            catch (SemanticError e)
+            {
+                //success
+            }
+        }
+        [TestMethod]
         public void assignmentTypesMustBeCompatible()
         {
             ASTParser p = new ASTParser();
