@@ -10,6 +10,7 @@ namespace cgen2014minijavaTest
     [TestClass]
     public class CompilerTest
     {
+        static int tempNum = 1;
         List<String> compileAndRun(String source)
         {
             return compileAndRun(source, true).Item1;
@@ -17,26 +18,28 @@ namespace cgen2014minijavaTest
         Tuple<List<String>, List<String>> compileAndRun(String source, bool hasStderr)
         {
             //compile the program
+            String fileName = "temp" + tempNum + ".exe";
+            tempNum++;
             ASTParser parser = new ASTParser();
             MiniJavaGrammar g = new MiniJavaGrammar();
             SyntaxTree tree = g.parse(source);
             ProgramNode t = parser.parse(tree);
             CodeGenerator cg = new CodeGenerator();
-            AssemblyBuilder a = cg.generateModule(t, "temp.exe");
-            a.Save("temp.exe");
+            AssemblyBuilder a = cg.generateModule(t, fileName);
+            a.Save(fileName);
 
             //run the program and capture the output
             Process p = new Process();
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
-            p.StartInfo.FileName = "temp.exe";
+            p.StartInfo.FileName = fileName;
             p.Start();
             String output = p.StandardOutput.ReadToEnd();
             String errors = p.StandardError.ReadToEnd();
             p.WaitForExit();
 
-            System.IO.File.Delete("temp.exe");
+            System.IO.File.Delete(fileName);
 
             if (output.Length > 0)
             {
