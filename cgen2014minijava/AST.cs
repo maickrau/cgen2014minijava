@@ -550,10 +550,10 @@ namespace cgen2014minijava
                 {
                     return true;
                 }
-                if (((ClassType)super).type.inherits != null)
+                if (((ClassType)sub).type.inherits != null)
                 {
                     //a subclass may be assigned to a superclass
-                    return isSubclass(sub, new ClassType(((ClassType)super).type.inherits, super));
+                    return isSubclass(new ClassType(((ClassType)sub).type.inherits, super), super);
                 }
             }
             return false;
@@ -569,7 +569,7 @@ namespace cgen2014minijava
                 }
                 for (int i = 0; i < expr.args.Count; i++)
                 {
-                    if (!isSubclass(expr.f.method.arguments[i].type, expr.args[i].type))
+                    if (!isSubclass(expr.args[i].type, expr.f.method.arguments[i].type))
                     {
                         addError(expr.args[i], "Function call types are not compatible, expected " + expr.f.method.arguments[i].type + ", received " + expr.args[i].type);
                     }
@@ -865,7 +865,7 @@ namespace cgen2014minijava
             {
                 bindNames((ExpressionNode)((AssignmentNode)node).target);
                 bindNames((ExpressionNode)((AssignmentNode)node).value);
-                if (!isSubclass(((AssignmentNode)node).target.type, ((AssignmentNode)node).value.type))
+                if (!isSubclass(((AssignmentNode)node).value.type, ((AssignmentNode)node).target.type))
                 {
                     addError(node, "Assignment must have compatible types (" + ((AssignmentNode)node).target.type + " vs " + ((AssignmentNode)node).value.type + ")");
                 }
@@ -873,9 +873,9 @@ namespace cgen2014minijava
             else if (node is ReturnNode)
             {
                 bindNames(((ReturnNode)node).value);
-                if (!((ReturnNode)node).value.type.Equals(currentMethod.type))
+                if (!isSubclass(((ReturnNode)node).value.type, currentMethod.type))
                 {
-                    addError(node, "Return type must be same as function's declared type");
+                    addError(node, "Return type must be compatible with the function's declared type");
                 }
             }
             else if (node is AssertNode)

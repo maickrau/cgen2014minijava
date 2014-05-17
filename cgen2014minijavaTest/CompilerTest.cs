@@ -724,5 +724,27 @@ class second {}
             Assert.AreEqual("1", output[0]);
             Assert.AreEqual("1", output[1]);
         }
+        [TestMethod]
+        public void returnCanBeASubclass()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    second a;
+    a = new second().f();
+    System.out.println(a.g());
+    }
+}
+class third extends second {
+public int g() { return 5; }
+}
+class second {
+public second f() { return new third(); }
+public int g() { return 1; }
+}
+";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("5", output[0]);
+        }
     }
 }
