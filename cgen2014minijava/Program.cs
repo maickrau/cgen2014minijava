@@ -38,13 +38,33 @@ namespace cgen2014minijava
             System.Console.WriteLine("Syntax analysis");
             ASTParser p = new ASTParser();
             MiniJavaGrammar g = new MiniJavaGrammar();
-            SyntaxTree tree = g.parse(s);
+            SyntaxTree tree = null;
+            try
+            {
+                tree = g.parse(s);
+            }
+            catch (ParserException e)
+            {
+                System.Console.WriteLine("Errors parsing the program: " + e);
+                return;
+            }
 
             System.Console.WriteLine("Semantic analysis");
-            ProgramNode t = p.parse(tree);
+            ProgramNode t = null;
+            try
+            {
+                t = p.parse(tree);
+            }
+            catch (SemanticError e)
+            {
+                System.Console.WriteLine("Semantic errors in program: " + e);
+                return;
+            }
 
             System.Console.WriteLine("Code generation");
             CodeGenerator cg = new CodeGenerator();
+            //no try-catch here because code generation exceptions are bugs in this program
+            //any errors in the input program should have been noticed at syntax/semantic analysis
             AssemblyBuilder a = cg.generateModule(t, args[1]);
 
             System.Console.WriteLine("Saving generated executable");

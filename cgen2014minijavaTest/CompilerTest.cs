@@ -474,5 +474,37 @@ System.out.println(5);
             Assert.AreEqual("10", output[1]);
             Assert.AreEqual("2", output[2]);
         }
+        [TestMethod]
+        public void membersAreNotStatic()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    Fac b;
+    Fac c;
+    b = new Fac();
+    c = new Fac();
+    System.out.println (b.getA());
+    System.out.println (c.getA());
+    b.setA(10);
+    System.out.println (b.getA());
+    System.out.println (c.getA());
+  }
+}
+class Fac {
+int a;
+public int getA() {
+return a;
+}
+public void setA(int a) {
+this.a = a;
+}
+}";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("0", output[0]);
+            Assert.AreEqual("0", output[1]);
+            Assert.AreEqual("10", output[2]);
+            Assert.AreEqual("0", output[3]);
+        }
     }
 }
