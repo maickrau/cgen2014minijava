@@ -542,5 +542,69 @@ namespace cgen2014minijavaTest
                 //success
             }
         }
+        [TestMethod]
+        public void equalsWithInheritanceIsValid()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    if (new second() == new third()) {}
+                  }
+                }
+                class second {}
+                class third extends second {}
+                ";
+            ProgramNode t = p.parse(g.parse(s));
+            //doesn't throw a semantic error
+        }
+        [TestMethod]
+        public void equalsNeedsCompatibleTypes()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    if (new second() == new third()) {}
+                  }
+                }
+                class second {}
+                class third {}
+                ";
+            try
+            {
+                ProgramNode t = p.parse(g.parse(s));
+                Assert.Fail();
+            }
+            catch (SemanticError e)
+            {
+                //success
+            }
+        }
+        [TestMethod]
+        public void equalsNeedsCompatibleTypes2()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    if (new second() == 1) {}
+                  }
+                }
+                class second {}
+                ";
+            try
+            {
+                ProgramNode t = p.parse(g.parse(s));
+                Assert.Fail();
+            }
+            catch (SemanticError e)
+            {
+                //success
+            }
+        }
     }
 }

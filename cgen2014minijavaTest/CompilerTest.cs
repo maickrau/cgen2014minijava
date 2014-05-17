@@ -656,5 +656,73 @@ public void modifySecond(second b) { b.setA(10); }
             Assert.AreEqual("15", output[1]);
             Assert.AreEqual("10", output[2]);
         }
+        [TestMethod]
+        public void objectReferenceEqualsWorks()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    second a;
+    second b;
+    b = new second();
+    a = new second();
+    if (a==b) {
+        System.out.println(0);
+    }
+    else
+    {
+        System.out.println(1);
+    }
+    b = a;
+    if (a==b) {
+        System.out.println(1);
+    }
+    else
+    {
+        System.out.println(0);
+    }
+  }
+}
+class second {
+}
+";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("1", output[0]);
+            Assert.AreEqual("1", output[1]);
+        }
+        [TestMethod]
+        public void objectReferenceEqualsWorksWithInheritance()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    second a;
+    third b;
+    a = new second();
+    b = new third();
+    if (a==b) {
+        System.out.println(0);
+    }
+    else
+    {
+        System.out.println(1);
+    }
+    a = b;
+    if (a==b) {
+        System.out.println(1);
+    }
+    else
+    {
+        System.out.println(0);
+    }
+  }
+}
+class third extends second {}
+class second {}
+";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("1", output[0]);
+            Assert.AreEqual("1", output[1]);
+        }
     }
 }

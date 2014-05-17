@@ -534,26 +534,26 @@ namespace cgen2014minijava
             breakOnErrors();
             return unbound;
         }
-        private bool typesAreAssignCompatible(TypeNode to, TypeNode value)
+        private bool isSubclass(TypeNode sub, TypeNode super)
         {
-            if (to is BaseType && value is BaseType)
+            if (sub is BaseType && super is BaseType)
             {
-                return ((BaseType)to).type.Equals(((BaseType)value).type);
+                return ((BaseType)sub).type.Equals(((BaseType)super).type);
             }
-            if (to is ArrayType && value is ArrayType)
+            if (sub is ArrayType && super is ArrayType)
             {
-                return ((ArrayType)to).baseType.Equals(((ArrayType)value).baseType);
+                return ((ArrayType)sub).baseType.Equals(((ArrayType)super).baseType);
             }
-            if (to is ClassType && value is ClassType)
+            if (sub is ClassType && super is ClassType)
             {
-                if (((ClassType)to).type.Equals(((ClassType)value).type))
+                if (((ClassType)sub).type.Equals(((ClassType)super).type))
                 {
                     return true;
                 }
-                if (((ClassType)value).type.inherits != null)
+                if (((ClassType)super).type.inherits != null)
                 {
                     //a subclass may be assigned to a superclass
-                    return typesAreAssignCompatible(to, new ClassType(((ClassType)value).type.inherits, value));
+                    return isSubclass(sub, new ClassType(((ClassType)super).type.inherits, super));
                 }
             }
             return false;
@@ -569,7 +569,7 @@ namespace cgen2014minijava
                 }
                 for (int i = 0; i < expr.args.Count; i++)
                 {
-                    if (!typesAreAssignCompatible(expr.f.method.arguments[i].type, expr.args[i].type))
+                    if (!isSubclass(expr.f.method.arguments[i].type, expr.args[i].type))
                     {
                         addError(expr.args[i], "Function call types are not compatible, expected " + expr.f.method.arguments[i].type + ", received " + expr.args[i].type);
                     }
@@ -865,7 +865,7 @@ namespace cgen2014minijava
             {
                 bindNames((ExpressionNode)((AssignmentNode)node).target);
                 bindNames((ExpressionNode)((AssignmentNode)node).value);
-                if (!typesAreAssignCompatible(((AssignmentNode)node).target.type, ((AssignmentNode)node).value.type))
+                if (!isSubclass(((AssignmentNode)node).target.type, ((AssignmentNode)node).value.type))
                 {
                     addError(node, "Assignment must have compatible types (" + ((AssignmentNode)node).target.type + " vs " + ((AssignmentNode)node).value.type + ")");
                 }
@@ -1029,13 +1029,25 @@ namespace cgen2014minijava
         }
         private TypeNode operatorResultType(TypeNode lhs, TypeNode rhs, Operator op)
         {
+            if (op.Equals(new Operator("==")))
+            {
+                if (lhs.Equals(rhs))
+                {
+                    return new BaseType(typeof(Boolean), op); ;
+                }
+                if (isSubclass(lhs, rhs))
+                {
+                    return new BaseType(typeof(Boolean), op); ;
+                }
+                if (isSubclass(rhs, lhs))
+                {
+                    return new BaseType(typeof(Boolean), op); ;
+                }
+                return null;
+            }
             if (!lhs.Equals(rhs))
             {
                 return null;
-            }
-            if (op.Equals(new Operator("==")))
-            {
-                return new BaseType(typeof(Boolean), op); ;
             }
             if (!(lhs is BaseType))
             {
