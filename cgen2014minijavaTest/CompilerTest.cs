@@ -627,5 +627,34 @@ class Factorial {
             Assert.AreEqual("2", output.Item1[1]);
             Assert.IsTrue(output.Item2[1].Contains("Assertion failed at line 6, position 4"));
         }
+        [TestMethod]
+        public void parametersAreSentByReference()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    second a;
+    second b;
+    b = new second();
+    a = new second();
+    System.out.println(a.getA());
+    a.setA(15);
+    System.out.println(a.getA());
+    b.modifySecond(a);
+    System.out.println(a.getA());
+  }
+}
+class second {
+int a;
+public int getA() { return a; }
+public void setA(int a) {this.a = a; }
+public void modifySecond(second b) { b.setA(10); }
+}
+";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("0", output[0]);
+            Assert.AreEqual("15", output[1]);
+            Assert.AreEqual("10", output[2]);
+        }
     }
 }
