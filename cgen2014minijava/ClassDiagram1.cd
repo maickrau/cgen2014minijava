@@ -1,0 +1,365 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="cgen2014minijava.ASTNode">
+    <Position X="27.5" Y="0.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAAAAAAgAAAIAAAAAAAAIAAAAEAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="cgen2014minijava.ProgramNode">
+    <Position X="21.25" Y="2.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAABAAAAAAAAIAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.ClassNode">
+    <Position X="25" Y="2.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAEAAQAAAACQAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.UnboundClassType">
+    <Position X="25" Y="5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.MethodNode">
+    <Position X="26.75" Y="2.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAEAAAlAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.UnboundMethodName">
+    <Position X="26.75" Y="5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.VariableNode">
+    <Position X="33.75" Y="2.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAFAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.UnboundVariableName">
+    <Position X="33.75" Y="5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.StatementNode">
+    <Position X="23" Y="2.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.BlockStatementNode">
+    <Position X="25" Y="7.75" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAQAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.WhileNode">
+    <Position X="28.5" Y="7.75" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAIAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.IfNode">
+    <Position X="30.25" Y="7.75" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAIAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAgAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.AssignmentNode">
+    <Position X="32" Y="7.75" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAIAAAAAAAAAAAACAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.ReturnNode">
+    <Position X="33.75" Y="7.75" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.AssertNode">
+    <Position X="21.5" Y="7.75" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.PrintNode">
+    <Position X="23.25" Y="7.75" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.ExpressionNode">
+    <Position X="26.75" Y="7.75" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.ThisNode">
+    <Position X="25.5" Y="11.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.ObjectMethodReference">
+    <Position X="29" Y="11.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAICAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.IntConstant">
+    <Position X="30.75" Y="11.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.BoolConstant">
+    <Position X="32.5" Y="11.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.FunctionCall">
+    <Position X="20.25" Y="11.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.UnaryOperatorCall">
+    <Position X="22" Y="11.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAIAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.BinaryOperatorCall">
+    <Position X="23.75" Y="11.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAABAABAAAIAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.NewNode">
+    <Position X="27.25" Y="11.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.NewSingular">
+    <Position X="26.25" Y="13.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.NewArray">
+    <Position X="28.25" Y="13.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAABAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.LValue">
+    <Position X="34.25" Y="11.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.ObjectMemberReference">
+    <Position X="30.75" Y="13.25" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAACAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.ArrayLengthRead">
+    <Position X="30.75" Y="15.25" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.LocalOrMemberReference">
+    <Position X="32.5" Y="13.25" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAIAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.ArrayReference">
+    <Position X="34.25" Y="13.25" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAABAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.TypeNode">
+    <Position X="30.25" Y="2.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.ArrayType">
+    <Position X="30.25" Y="5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEgAAAAAAAAAgAAAAAAQAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.BaseType">
+    <Position X="32" Y="5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEgAAAAAAAAAABAAAAAQAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="cgen2014minijava.ClassType">
+    <Position X="28.5" Y="5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEgAAAAAAAAAABAAAAAQAAAAAAAAA=</HashCode>
+      <FileName>AST.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Tahoma" Size="8.25" />
+</ClassDiagram>
