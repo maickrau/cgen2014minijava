@@ -363,5 +363,33 @@ namespace cgen2014minijavaTest
                 //success
             }
         }
+        [TestMethod]
+        public void functionArgumentTypesMustBeCompatible()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    second a;
+                    a = new second();
+                    a.f(a);
+                  }
+                }
+                class second {
+                  public int f(int a) {
+                  }
+                }
+                ";
+            try
+            {
+                ProgramNode t = p.parse(g.parse(s));
+                Assert.Fail();
+            }
+            catch (SemanticError e)
+            {
+                //success
+            }
+        }
     }
 }

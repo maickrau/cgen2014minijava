@@ -356,7 +356,7 @@ namespace cgen2014minijava
     }
     public class SemanticError : Exception
     {
-        public SemanticError(ASTNode node, String msg) : base("" + node.line + ":" + node.position + " Semantic error: " + msg)
+        public SemanticError(String msg) : base(msg)
         {
         }
     }
@@ -440,6 +440,10 @@ namespace cgen2014minijava
                 {
                     visit(((PrintNode)node).value, f, postOrder);
                 }
+                else if (node is ExpressionNode)
+                {
+                    visit((ExpressionNode)node, f, postOrder);
+                }
             };
         }
     }
@@ -497,17 +501,80 @@ namespace cgen2014minijava
         private HashSet<String> locals; //for validating local variable name uniqueness
         private ClassNode currentClass;
         private MethodNode currentMethod;
+        private List<String> errors;
+        private void addError(Positionable position, String message)
+        {
+            errors.Add("" + position.line + ":" + position.position + " Semantic error: " + message);
+        }
+        private void breakOnErrors()
+        {
+            if (errors.Count > 0)
+            {
+                throw new SemanticError(String.Join(Environment.NewLine, errors));
+            }
+        }
         public ProgramNode parse(SyntaxTree tree)
         {
+            errors = new List<String>();
             classTable = new Dictionary<String, ClassNode>();
             variableTable = new Stack<Dictionary<String, VariableNode>>();
             ProgramNode unbound = parseProgram(tree.root);
+            breakOnErrors();
             validateUniqueLocals(unbound); //local variable names must be unique (may shadow member variables)
+            breakOnErrors();
             bindClassNames(unbound); //bind method return types to classes
+            breakOnErrors();
             bindNames(unbound); //bind all other names
+            breakOnErrors();
             validateInheritance(unbound); //sort the classes so derived classes are after base classes
-            StatementVisitor.visit(unbound, delegate(StatementNode s) { if (s is ExpressionNode && !(s is FunctionCall)) throw new SemanticError(s, "Statement expression must be a function call"); }, false);
+            breakOnErrors();
+            StatementVisitor.visit(unbound, delegate(StatementNode s) { if (s is ExpressionNode && !(s is FunctionCall)) addError(s, "Statement expression must be a function call"); }, false);
+            breakOnErrors();
+            ExpressionVisitor.visit(unbound, this.validateFunctionCall, false);
+            breakOnErrors();
             return unbound;
+        }
+        private bool typesAreAssignCompatible(TypeNode to, TypeNode value)
+        {
+            if (to is BaseType && value is BaseType)
+            {
+                return ((BaseType)to).type.Equals(((BaseType)value).type);
+            }
+            if (to is ArrayType && value is ArrayType)
+            {
+                return ((ArrayType)to).baseType.Equals(((ArrayType)value).baseType);
+            }
+            if (to is ClassType && value is ClassType)
+            {
+                if (((ClassType)to).type.Equals(((ClassType)value).type))
+                {
+                    return true;
+                }
+                if (((ClassType)value).type.inherits != null)
+                {
+                    //a subclass may be assigned to a superclass
+                    return typesAreAssignCompatible(to, new ClassType(((ClassType)value).type.inherits, value));
+                }
+            }
+            return false;
+        }
+        private void validateFunctionCall(ExpressionNode node)
+        {
+            if (node is FunctionCall)
+            {
+                FunctionCall expr = (FunctionCall)node;
+                if (expr.args.Count != expr.f.method.arguments.Count)
+                {
+                    addError(node, "Function call has wrong number of arguments, expected " + expr.f.method.arguments.Count + ", received " + expr.args.Count);
+                }
+                for (int i = 0; i < expr.args.Count; i++)
+                {
+                    if (!typesAreAssignCompatible(expr.f.method.arguments[i].type, expr.args[i].type))
+                    {
+                        addError(expr.args[i], "Function call types are not compatible, expected " + expr.f.method.arguments[i].type + ", received " + expr.args[i].type);
+                    }
+                }
+            }
         }
         private MethodNode findMethod(ClassNode node, String methodName, ASTNode calledFrom)
         {
@@ -520,7 +587,8 @@ namespace cgen2014minijava
             {
                 return findMethod(node.inherits, methodName, calledFrom);
             }
-            throw new SemanticError(calledFrom, "Method not found");
+            addError(calledFrom, "Method not found");
+            return null;
         }
         private void validateUniqueLocals(ProgramNode prog)
         {
@@ -539,7 +607,7 @@ namespace cgen2014minijava
             {
                 if (locals.Contains(arg.name))
                 {
-                    throw new SemanticError(arg, "Local variable already declared");
+                    addError(arg, "Local variable already declared");
                 }
                 locals.Add(arg.name);
             }
@@ -551,7 +619,7 @@ namespace cgen2014minijava
             {
                 if (locals.Contains(local.name))
                 {
-                    throw new SemanticError(local, "Local variable already declared");
+                    addError(local, "Local variable already declared");
                 }
                 locals.Add(local.name);
             }
@@ -610,7 +678,7 @@ namespace cgen2014minijava
             }
             if (rest.Count > 0)
             {
-                throw new SemanticError(prog, "Inheritance cycle (" + String.Join(", ", rest.Select(n => n.name)) + ")");
+                addError(prog, "Inheritance cycle (" + String.Join(", ", rest.Select(n => n.name)) + ")");
             }
             prog.classes = sorted;
         }
@@ -618,7 +686,7 @@ namespace cgen2014minijava
         {
             if (!classTable.Keys.Contains(name))
             {
-                throw new SemanticError(caller, "Class name not found: \"" + name + "\"");
+                addError(caller, "Class name not found: \"" + name + "\"");
             }
             return classTable[name];
         }
@@ -783,7 +851,7 @@ namespace cgen2014minijava
                 bindNames((ExpressionNode)((AssignmentNode)node).value);
                 if (!((AssignmentNode)node).target.type.Equals(((AssignmentNode)node).value.type))
                 {
-                    throw new SemanticError(node, "Assignment must have compatible types (" + ((AssignmentNode)node).target.type + " vs " + ((AssignmentNode)node).value.type + ")");
+                    addError(node, "Assignment must have compatible types (" + ((AssignmentNode)node).target.type + " vs " + ((AssignmentNode)node).value.type + ")");
                 }
             }
             else if (node is ReturnNode)
@@ -791,7 +859,7 @@ namespace cgen2014minijava
                 bindNames(((ReturnNode)node).value);
                 if (!((ReturnNode)node).value.type.Equals(currentMethod.type))
                 {
-                    throw new SemanticError(node, "Return type must be same as function's declared type");
+                    addError(node, "Return type must be same as function's declared type");
                 }
             }
             else if (node is AssertNode)
@@ -871,7 +939,7 @@ namespace cgen2014minijava
             bindNames(node.obj);
             if (!(node.obj.type is ClassType))
             {
-                throw new SemanticError(node.obj, "Method call must be applied to a class");
+                addError(node.obj, "Method call must be applied to a class");
             }
             ClassType objType = new ClassType(getClass(node.obj, ((ClassType)node.obj.type).type.name), node.obj);
             node.obj.type = objType;
@@ -888,7 +956,7 @@ namespace cgen2014minijava
             }
             if (node.args.Count != node.f.method.arguments.Count)
             {
-                throw new SemanticError(node, "Wrong number of arguments, expected " + node.f.method.arguments.Count);
+                addError(node, "Wrong number of arguments, expected " + node.f.method.arguments.Count);
             }
             node.type = node.f.type;
         }
@@ -899,7 +967,7 @@ namespace cgen2014minijava
             {
                 if (!node.op.Equals(new Operator("!")))
                 {
-                    throw new SemanticError(node, "Operator " + node.op.value + " can't be applied to booleans");
+                    addError(node, "Operator " + node.op.value + " can't be applied to booleans");
                 }
                 node.type = new BaseType(typeof(Boolean), node);
             }
@@ -907,13 +975,13 @@ namespace cgen2014minijava
             {
                 if (!node.op.Equals(new Operator("-")) && !node.op.Equals(new Operator("+")))
                 {
-                    throw new SemanticError(node, "Operator " + node.op.value + " can't be applied to ints");
+                    addError(node, "Operator " + node.op.value + " can't be applied to ints");
                 }
                 node.type = new BaseType(typeof(Int32), node);
             }
             else
             {
-                throw new SemanticError(node, "Operator " + node.op.value + " can't be applied to type");
+                addError(node, "Operator " + node.op.value + " can't be applied to type");
             }
         }
         private void bindNames(BinaryOperatorCall node)
@@ -923,7 +991,7 @@ namespace cgen2014minijava
             TypeNode resultType = operatorResultType(node.lhs.type, node.rhs.type, node.op);
             if (resultType == null)
             {
-                throw new SemanticError(node, "Operator " + node.op.value + " can't be applied to types");
+                addError(node, "Operator " + node.op.value + " can't be applied to types");
             }
             node.type = operatorResultType(node.lhs.type, node.rhs.type, node.op);
         }
@@ -980,12 +1048,12 @@ namespace cgen2014minijava
             bindNames(node.obj);
             if (!(node.obj.type is ClassType))
             {
-                throw new SemanticError(node.obj, "Member access can only be done on classes");
+                addError(node.obj, "Member access can only be done on classes");
             }
             node.member = getClass(node.obj, ((ClassType)node.obj.type).type.name).members.Find(v => v.name == node.member.name);
             if (node.member == null)
             {
-                throw new SemanticError(node.member, "Member " + node.member.name + " not found in class " + ((ClassType)node.obj.type).type.name);
+                addError(node.member, "Member " + node.member.name + " not found in class " + ((ClassType)node.obj.type).type.name);
             }
             node.type = node.member.type;
         }
@@ -1001,11 +1069,11 @@ namespace cgen2014minijava
             bindNames(node.index);
             if (!(node.array.type is ArrayType))
             {
-                throw new SemanticError(node, "Array reference must be applied to an array");
+                addError(node, "Array reference must be applied to an array");
             }
             if (!node.index.type.Equals(new BaseType(typeof(Int32), node.index)))
             {
-                throw new SemanticError(node.index, "Array reference index must be an int");
+                addError(node.index, "Array reference index must be an int");
             }
             node.type = ((ArrayType)node.array.type).baseType;
         }
