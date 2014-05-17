@@ -336,5 +336,32 @@ namespace cgen2014minijavaTest
             Assert.IsFalse(((LocalOrMemberReference)((AssignmentNode)t.classes[1].methods[0].statements.statements[0]).target).isMember);
             Assert.IsTrue(((LocalOrMemberReference)((AssignmentNode)t.classes[1].methods[1].statements.statements[0]).target).isMember);
         }
+        [TestMethod]
+        public void localNamesMustBeUnique()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                  }
+                }
+                class second {
+                  public int f() {
+                    int a;
+                    int a;
+                  }
+                }
+                ";
+            try
+            {
+                ProgramNode t = p.parse(g.parse(s));
+                Assert.Fail();
+            }
+            catch (SemanticError e)
+            {
+                //success
+            }
+        }
     }
 }

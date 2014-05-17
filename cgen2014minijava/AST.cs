@@ -502,10 +502,10 @@ namespace cgen2014minijava
             classTable = new Dictionary<String, ClassNode>();
             variableTable = new Stack<Dictionary<String, VariableNode>>();
             ProgramNode unbound = parseProgram(tree.root);
+            validateUniqueLocals(unbound); //local variable names must be unique (may shadow member variables)
             bindClassNames(unbound); //bind method return types to classes
             bindNames(unbound); //bind all other names
             validateInheritance(unbound); //sort the classes so derived classes are after base classes
-            validateUniqueLocals(unbound); //local variable names must be unique (may shadow member variables)
             StatementVisitor.visit(unbound, delegate(StatementNode s) { if (s is ExpressionNode && !(s is FunctionCall)) throw new SemanticError(s, "Statement expression must be a function call"); }, false);
             return unbound;
         }
