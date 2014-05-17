@@ -606,5 +606,28 @@ namespace cgen2014minijavaTest
                 //success
             }
         }
+        [TestMethod]
+        public void assignmentTargetMustBeLValue()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    new second() = new second();
+                  }
+                }
+                class second {}
+                ";
+            try
+            {
+                ProgramNode t = p.parse(g.parse(s));
+                Assert.Fail();
+            }
+            catch (SemanticError e)
+            {
+                //success
+            }
+        }
     }
 }

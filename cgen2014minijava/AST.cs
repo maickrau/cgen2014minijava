@@ -1293,7 +1293,8 @@ namespace cgen2014minijava
             {
                 return parseMemberVariableRef(node);
             }
-            throw new Exception("this shouldn't happen: AST parse lvalue unknown type " + node.token);
+            addError(node, "The target of an assignment must be an lvalue");
+            return null;
         }
         private ObjectMemberReference parseMemberVariableRef(SyntaxNode node)
         {
