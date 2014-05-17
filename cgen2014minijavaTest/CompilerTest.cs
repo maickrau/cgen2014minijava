@@ -12,6 +12,10 @@ namespace cgen2014minijavaTest
     {
         List<String> compileAndRun(String source)
         {
+            return compileAndRun(source, true).Item1;
+        }
+        Tuple<List<String>, List<String>> compileAndRun(String source, bool hasStderr)
+        {
             //compile the program
             ASTParser parser = new ASTParser();
             MiniJavaGrammar g = new MiniJavaGrammar();
@@ -25,16 +29,28 @@ namespace cgen2014minijavaTest
             Process p = new Process();
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.RedirectStandardError = true;
             p.StartInfo.FileName = "temp.exe";
             p.Start();
             String output = p.StandardOutput.ReadToEnd();
+            String errors = p.StandardError.ReadToEnd();
             p.WaitForExit();
 
             System.IO.File.Delete("temp.exe");
 
-            output = output.Replace(Environment.NewLine, "\n"); //replace \r\n with \n so split doesn't produce extra empty lines
-            output = output.Substring(0, output.Length - 1); //remove trailing endline
-            return new List<String>(output.Split(new char[]{'\n'}));
+            if (output.Length > 0)
+            {
+                output = output.Replace(Environment.NewLine, "\n"); //replace \r\n with \n so split doesn't produce extra empty lines
+                output = output.Substring(0, output.Length - 1); //remove trailing endline
+            }
+
+            if (errors.Length > 0)
+            {
+                errors = errors.Replace(Environment.NewLine, "\n"); //replace \r\n with \n so split doesn't produce extra empty lines
+                errors = errors.Substring(0, errors.Length - 1); //remove trailing endline
+            }
+
+            return new Tuple<List<String>, List<String>>(new List<String>(output.Split(new char[] { '\n' })), new List<String>(errors.Split(new char[] { '\n' })));
         }
         [TestMethod]
         public void factorialWorks()
@@ -586,6 +602,27 @@ return a.f();
             List<String> output = compileAndRun(s);
             Assert.AreEqual("2", output[0]);
             Assert.AreEqual("1", output[1]);
+        }
+        [TestMethod]
+        public void assertionsWork()
+        {
+            //this test will create a "temp.exe has stopped working" window
+            String s = @"
+class Factorial {
+  public static void main () {
+    System.out.println(1);
+    assert(true);
+    System.out.println(2);
+    assert(false);
+    System.out.println(3);
+  }
+}
+";
+            Tuple<List<String>, List<String>> output = compileAndRun(s, true);
+            Assert.AreEqual(2, output.Item1.Count);
+            Assert.AreEqual("1", output.Item1[0]);
+            Assert.AreEqual("2", output.Item1[1]);
+            Assert.IsTrue(output.Item2[1].Contains("Assertion failed at line 6, position 4"));
         }
     }
 }

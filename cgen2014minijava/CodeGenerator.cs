@@ -505,8 +505,8 @@ namespace cgen2014minijava
             Label end = generator.DefineLabel();
             generateExpressionCode(generator, node.value);
             generator.Emit(System.Reflection.Emit.OpCodes.Brtrue, end);
-            //todo: throw something useful
-            generator.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, 0);
+            generator.Emit(System.Reflection.Emit.OpCodes.Ldstr, "Assertion failed at line " + node.line +", position " + node.position);
+            generator.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Exception).GetConstructor(new Type[] { typeof(String) }));
             generator.Emit(System.Reflection.Emit.OpCodes.Throw);
             generator.MarkLabel(end);
         }
