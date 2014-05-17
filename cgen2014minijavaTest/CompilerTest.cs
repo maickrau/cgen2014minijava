@@ -261,6 +261,8 @@ class Arraystuff {
   public static void main () {
     Fac[] a;
     a = new Fac[5];
+    a[1] = new Fac();
+    a[3] = new Fac();
     System.out.println(a[1].ComputeFac(3));
     System.out.println(a[3].ComputeFac(5));
   }
@@ -455,6 +457,7 @@ a = num;
 class Factorial {
   public static void main () {
     Fac a;
+    a = new Fac();
     a.print5();
     a.print10();
     System.out.println(1+1); //a.print10() shouldn't leave anything on stack
@@ -523,6 +526,66 @@ public int get() { return 5; }
 }";
             List<String> output = compileAndRun(s);
             Assert.AreEqual("5", output[0]);
+        }
+        [TestMethod]
+        public void dynamicDispatchWorks()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    Fac b;
+    b = new Fac2();
+    System.out.println(b.f());
+    System.out.println(b.g());
+    b = new Fac();
+    System.out.println(b.f());
+    System.out.println(b.g());
+  }
+}
+class Fac2 extends Fac {
+public int g() { return 2; }
+}
+class Fac {
+public int f() { return g(); }
+public int g() { return 1; }
+}";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("2", output[0]);
+            Assert.AreEqual("2", output[1]);
+            Assert.AreEqual("1", output[2]);
+            Assert.AreEqual("1", output[3]);
+        }
+        [TestMethod]
+        public void testPolymorphismInParameters()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    Fac b;
+    b = new Fac2();
+    FacCaller c;
+    c = new FacCaller();
+    System.out.println(c.call(b));
+    b = new Fac();
+    System.out.println(c.call(b));
+  }
+}
+class Fac2 extends Fac {
+public int g() { return 2; }
+}
+class Fac {
+public int f() { return g(); }
+public int g() { return 1; }
+}
+class FacCaller {
+public int call(Fac a) {
+return a.f();
+}
+}
+";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("2", output[0]);
+            Assert.AreEqual("1", output[1]);
         }
     }
 }

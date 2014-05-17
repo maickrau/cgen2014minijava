@@ -26,7 +26,7 @@ namespace cgen2014minijava
         {
             foreach (MethodNode n in classnode.methods)
             {
-                methods.Add(n, builder.DefineMethod(n.name, System.Reflection.MethodAttributes.Public, typeholder.getType(n.type.Type), n.arguments.Select(a => typeholder.getType(a.type.Type)).ToArray()));
+                methods.Add(n, builder.DefineMethod(n.name, System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Virtual, typeholder.getType(n.type.Type), n.arguments.Select(a => typeholder.getType(a.type.Type)).ToArray()));
             }
         }
         public void bindMainMethod()
@@ -442,7 +442,7 @@ namespace cgen2014minijava
             {
                 generateExpressionCode(generator, val);
             }
-            generator.Emit(System.Reflection.Emit.OpCodes.Call, getMethod(node.f));
+            generator.Emit(System.Reflection.Emit.OpCodes.Callvirt, getMethod(node.f));
         }
         private void generateLocalAssignment(ILGenerator generator, LocalOrMemberReference node, ExpressionNode value)
         {
