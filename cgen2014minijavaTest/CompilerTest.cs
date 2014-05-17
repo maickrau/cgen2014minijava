@@ -506,5 +506,23 @@ this.a = a;
             Assert.AreEqual("10", output[2]);
             Assert.AreEqual("0", output[3]);
         }
+        [TestMethod]
+        public void subclassCanBeAssignedToSuperclass()
+        {
+            String s = @"
+class Factorial {
+  public static void main () {
+    Fac b;
+    b = new Fac2();
+    System.out.println(b.get());
+  }
+}
+class Fac2 extends Fac {}
+class Fac {
+public int get() { return 5; }
+}";
+            List<String> output = compileAndRun(s);
+            Assert.AreEqual("5", output[0]);
+        }
     }
 }

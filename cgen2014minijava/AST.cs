@@ -849,7 +849,7 @@ namespace cgen2014minijava
             {
                 bindNames((ExpressionNode)((AssignmentNode)node).target);
                 bindNames((ExpressionNode)((AssignmentNode)node).value);
-                if (!((AssignmentNode)node).target.type.Equals(((AssignmentNode)node).value.type))
+                if (!typesAreAssignCompatible(((AssignmentNode)node).target.type, ((AssignmentNode)node).value.type))
                 {
                     addError(node, "Assignment must have compatible types (" + ((AssignmentNode)node).target.type + " vs " + ((AssignmentNode)node).value.type + ")");
                 }
