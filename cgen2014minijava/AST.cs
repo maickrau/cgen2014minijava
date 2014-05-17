@@ -1309,6 +1309,11 @@ namespace cgen2014minijava
                 ObjectMemberReference ret = new ObjectMemberReference(node);
                 ret.obj = parseExpression(node.children[0]);
                 ret.member = new UnboundVariableName(((Identifier)node.children[1].token).value, node.children[1]);
+                if (!(ret.obj is ThisNode))
+                {
+                    //this is silly, but the specs said all members are private
+                    addError(node, "Variable " + ((Identifier)node.children[1].token).value + " is private");
+                }
                 return ret;
             }
         }

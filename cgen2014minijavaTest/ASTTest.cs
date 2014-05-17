@@ -629,5 +629,32 @@ namespace cgen2014minijavaTest
                 //success
             }
         }
+        [TestMethod]
+        public void privatesArePrivate()
+        {
+            ASTParser p = new ASTParser();
+            MiniJavaGrammar g = new MiniJavaGrammar();
+            String s = @"
+                class main {
+                  public static void main () {
+                    second a;
+                    a = new second();
+                    System.out.println(a.value);
+                  }
+                }
+                class second {
+                int value;
+                }
+                ";
+            try
+            {
+                ProgramNode t = p.parse(g.parse(s));
+                Assert.Fail();
+            }
+            catch (SemanticError e)
+            {
+                //success
+            }
+        }
     }
 }
